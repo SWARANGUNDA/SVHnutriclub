@@ -1,0 +1,295 @@
+// ============================================================
+// SVH Nutrition Club — Prisma Schema
+// ============================================================
+// Database: PostgreSQL via Supabase
+// ORM: Prisma v7
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ======================== ENUMS ========================
+
+enum Role {
+  GUEST
+  CUSTOMER
+  ADMIN
+}
+
+enum ConsultationType {
+  VIDEO
+  VOICE
+  CHAT
+}
+
+enum ConsultationStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum ProductCategory {
+  SHAKES
+  TEAS
+  SUPPLEMENTS
+  SKIN
+  OTHER
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// ======================== USER ========================
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  hashedPassword String?
+  image          String?
+  phone          String?
+  role           Role      @default(CUSTOMER)
+  isActive       Boolean   @default(true)
+  language       String    @default("en")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  accounts        Account[]
+  consultations   Consultation[]
+  bodyMetrics     BodyMetric[]
+  mealPlans       MealPlan[]
+  notifications   Notification[]
+  transformations Transformation[]
+  auditLogs       AuditLog[]
+  contactInquiries ContactInquiry[]
+
+  @@map("users")
+}
+
+// ======================== AUTH (NextAuth) ========================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// ======================== PRODUCTS ========================
+
+model Product {
+  id            String          @id @default(cuid())
+  name          String
+  slug          String          @unique
+  description   String          @db.Text
+  price         Float
+  originalPrice Float?
+  category      ProductCategory
+  image         String?
+  badge         String?
+  benefits      String[]
+  tags          String[]
+  rating        Float           @default(0)
+  reviewCount   Int             @default(0)
+  isActive      Boolean         @default(true)
+  sortOrder     Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@map("products")
+}
+
+// ======================== BLOG ========================
+
+model BlogPost {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  excerpt     String     @db.Text
+  content     String     @db.Text
+  category    String
+  author      String
+  readTime    String
+  image       String?
+  status      BlogStatus @default(DRAFT)
+  featured    Boolean    @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("blog_posts")
+}
+
+// ======================== CONSULTATIONS ========================
+
+model Consultation {
+  id        String             @id @default(cuid())
+  userId    String?
+  name      String
+  email     String
+  phone     String
+  type      ConsultationType
+  status    ConsultationStatus @default(PENDING)
+  date      DateTime
+  time      String
+  goals     String[]
+  message   String?            @db.Text
+  notes     String?            @db.Text
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("consultations")
+}
+
+// ======================== TRANSFORMATIONS ========================
+
+model Transformation {
+  id           String   @id @default(cuid())
+  userId       String?
+  name         String
+  age          Int
+  location     String
+  beforeWeight Float
+  afterWeight  Float
+  duration     String
+  story        String   @db.Text
+  achievements String[]
+  beforeImage  String?
+  afterImage   String?
+  isPublished  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("transformations")
+}
+
+// ======================== BODY METRICS ========================
+
+model BodyMetric {
+  id           String   @id @default(cuid())
+  userId       String
+  weight       Float?
+  height       Float?
+  bmi          Float?
+  bmr          Float?
+  bodyFat      Float?
+  muscleMass   Float?
+  visceralFat  Float?
+  waterPercent Float?
+  boneMass     Float?
+  metabolicAge Int?
+  healthScore  Float?
+  notes        String?  @db.Text
+  source       String?  // e.g., "manual", "ocr", "smart-scale"
+  measuredAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("body_metrics")
+}
+
+// ======================== MEAL PLANS ========================
+
+model MealPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?  @db.Text
+  meals       Json     // Structured meal data: { breakfast, lunch, dinner, snacks }
+  calories    Int?
+  protein     Float?
+  carbs       Float?
+  fats        Float?
+  hydration   Float?   // liters
+  aiProvider  String?  // "groq" | "gemini"
+  isActive    Boolean  @default(true)
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("meal_plans")
+}
+
+// ======================== NOTIFICATIONS ========================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String   @db.Text
+  type      String   // "info" | "success" | "warning" | "reminder"
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// ======================== AUDIT LOG ========================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+// ======================== CONTACT ========================
+
+model ContactInquiry {
+  id        String   @id @default(cuid())
+  userId    String?
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String   @db.Text
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("contact_inquiries")
+}
