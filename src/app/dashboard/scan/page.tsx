@@ -1,250 +1,181 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Upload, Sparkles, FileText, Camera, CheckCircle2, AlertCircle, Loader2, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Camera, Upload, ScanLine, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
-interface OcrResult {
-  weight?: number;
-  height?: number;
-  bmi?: number;
-  bmr?: number;
-  bodyFat?: number;
-  muscleMass?: number;
-  visceralFat?: number;
-  waterPercent?: number;
-  boneMass?: number;
-  metabolicAge?: number;
-}
-
-// Mock OCR extraction (simulates AI processing)
-function mockExtractMetrics(): OcrResult {
-  return {
-    weight: 72.5,
-    height: 170,
-    bmi: 25.1,
-    bmr: 1620,
-    bodyFat: 24.3,
-    muscleMass: 38.7,
-    visceralFat: 9,
-    waterPercent: 52.4,
-    boneMass: 2.9,
-    metabolicAge: 30,
-  };
-}
-
-export default function ScanPage() {
+export default function BodyScanPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [result, setResult] = useState<OcrResult | null>(null);
-  const [processing, setProcessing] = useState(false);
-  const [saveError, setSaveError] = useState("");
-  const [step, setStep] = useState<"upload" | "processing" | "results">("upload");
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<"idle" | "uploading" | "scanning" | "success" | "error">("idle");
+  const [results, setResults] = useState<any>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (!selected) return;
-    setFile(selected);
-    const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
-    reader.readAsDataURL(selected);
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      setPreview(URL.createObjectURL(selectedFile));
+      setStatus("idle");
+      setResults(null);
+    }
   };
 
   const handleScan = async () => {
     if (!file) return;
-    setStep("processing");
-    setProcessing(true);
+    setStatus("uploading");
 
-    // Simulate AI OCR processing
-    await new Promise((r) => setTimeout(r, 2500));
-    const extracted = mockExtractMetrics();
-    setResult(extracted);
     try {
-      const response = await fetch("/api/body-metrics", {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("performOCR", "true");
+
+      // 1. Upload & Simulate OCR
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadRes.ok) throw new Error("Upload failed");
+      setStatus("scanning");
+      
+      const { extractedData } = await uploadRes.json();
+      
+      if (!extractedData) throw new Error("OCR Failed");
+
+      // 2. Save extracted metrics to database
+      const metricRes = await fetch("/api/body-metrics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...extracted, source: "ocr-upload" }),
+        body: JSON.stringify({
+          ...extractedData,
+          source: "ocr",
+          measuredAt: new Date().toISOString()
+        })
       });
-      if (!response.ok) {
-        const payload = await response.json();
-        setSaveError(payload.error || "Metrics could not be saved.");
-      }
-    } catch {
-      setSaveError("Metrics could not be saved. Please try again later.");
+
+      if (!metricRes.ok) throw new Error("Failed to save metrics");
+
+      setResults(extractedData);
+      setStatus("success");
+    } catch (err) {
+      console.error(err);
+      setStatus("error");
     }
-    setProcessing(false);
-    setStep("results");
-  };
-
-  const handleReset = () => {
-    setFile(null);
-    setPreview(null);
-    setResult(null);
-    setSaveError("");
-    setStep("upload");
-  };
-
-  const metricLabels: Record<string, string> = {
-    weight: "Weight (kg)",
-    height: "Height (cm)",
-    bmi: "BMI",
-    bmr: "BMR (cal)",
-    bodyFat: "Body Fat (%)",
-    muscleMass: "Muscle Mass (%)",
-    visceralFat: "Visceral Fat",
-    waterPercent: "Water (%)",
-    boneMass: "Bone Mass (kg)",
-    metabolicAge: "Metabolic Age",
   };
 
   return (
     <div className="min-h-screen pt-24 pb-16">
-      <section className="relative overflow-hidden bg-gradient-hero py-10">
-        <div className="bg-grid pointer-events-none absolute inset-0 opacity-30" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">OCR Body Report</span>
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+            <ScanLine className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="mt-2 font-heading text-3xl font-bold text-foreground">
-            Scan Your Body Report
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Upload a smart scale screenshot or body composition report — AI extracts your metrics automatically
+          <h1 className="font-heading text-3xl font-bold text-foreground">Smart Scale Scanner</h1>
+          <p className="mt-2 text-muted-foreground">
+            Upload a screenshot from your smart scale app. Our AI will extract the metrics automatically.
           </p>
         </div>
-      </section>
 
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 mt-8">
-        {/* Step: Upload */}
-        {step === "upload" && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div
-              onClick={() => fileRef.current?.click()}
-              className={cn(
-                "glass cursor-pointer rounded-3xl border-2 border-dashed p-12 text-center transition-all hover:border-primary/50",
-                preview ? "border-primary/30" : "border-border"
-              )}
-            >
-              {preview ? (
-                <div className="space-y-4">
-                  <img src={preview} alt="Report preview" className="mx-auto max-h-64 rounded-xl object-contain" />
-                  <p className="text-sm font-medium text-foreground">{file?.name}</p>
-                  <p className="text-xs text-muted-foreground">Click to change file</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-                    <Upload className="h-8 w-8 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Upload Body Report</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Drag & drop or click — supports PNG, JPG, PDF
+        <div className="glass overflow-hidden rounded-3xl p-6 sm:p-10">
+          {!preview ? (
+            <div className="relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/30 py-20 transition-all hover:bg-muted/50 hover:border-primary/50">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="absolute inset-0 z-10 w-full cursor-pointer opacity-0"
+              />
+              <Upload className="mb-4 h-10 w-10 text-muted-foreground" />
+              <p className="text-lg font-medium text-foreground">Click or drag image to upload</p>
+              <p className="mt-1 text-sm text-muted-foreground">PNG, JPG, up to 10MB</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="relative mx-auto max-w-sm overflow-hidden rounded-2xl border border-border bg-black/5">
+                <img src={preview} alt="Scan preview" className="w-full object-contain" />
+                {(status === "uploading" || status === "scanning") && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+                    <ScanLine className="mb-4 h-10 w-10 animate-pulse text-primary" />
+                    <p className="font-semibold text-primary">
+                      {status === "uploading" ? "Uploading image..." : "Extracting metrics..."}
                     </p>
+                    {status === "scanning" && (
+                      <motion.div
+                        className="absolute left-0 right-0 h-1 bg-primary shadow-[0_0_10px_rgba(var(--primary),0.8)]"
+                        initial={{ top: 0 }}
+                        animate={{ top: "100%" }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      />
+                    )}
                   </div>
-                  <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Camera className="h-3 w-3" /> Screenshot</span>
-                    <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> PDF Report</span>
-                  </div>
+                )}
+              </div>
+
+              {status === "idle" && (
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setPreview(null)}
+                    className="flex-1 rounded-xl border border-border bg-transparent py-3 font-semibold text-foreground hover:bg-muted"
+                  >
+                    Change Image
+                  </button>
+                  <button
+                    onClick={handleScan}
+                    className="flex-1 rounded-xl bg-primary py-3 font-semibold text-primary-foreground shadow-lg hover:bg-primary/90"
+                  >
+                    Start Scan
+                  </button>
                 </div>
               )}
-              <input ref={fileRef} type="file" accept="image/*,.pdf" onChange={handleFileSelect} className="hidden" />
-            </div>
 
-            {file && (
-              <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={handleScan}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3.5 text-sm font-semibold text-white shadow-lg hover:shadow-emerald-500/25"
-              >
-                <Sparkles className="h-4 w-4" />
-                Analyze with AI
-              </motion.button>
-            )}
-          </motion.div>
-        )}
-
-        {/* Step: Processing */}
-        {step === "processing" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="glass rounded-3xl p-12 text-center"
-          >
-            <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-            <h2 className="mt-4 font-heading text-xl font-bold text-foreground">Analyzing Report...</h2>
-            <p className="mt-2 text-sm text-muted-foreground">AI is extracting body metrics from your report</p>
-            <div className="mt-6 mx-auto max-w-xs">
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <motion.div
-                  initial={{ width: "0%" }}
-                  animate={{ width: "90%" }}
-                  transition={{ duration: 2.5, ease: "easeInOut" }}
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500"
-                />
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Step: Results */}
-        {step === "results" && result && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-            <div className="glass rounded-2xl p-6">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                <div>
-                  <h2 className="font-heading text-lg font-bold text-foreground">Extraction Complete</h2>
-                  <p className="text-xs text-muted-foreground">10 metrics extracted from your report</p>
+              {status === "error" && (
+                <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-center">
+                  <AlertCircle className="mx-auto mb-2 h-6 w-6 text-red-500" />
+                  <p className="font-semibold text-red-500">Failed to extract data</p>
+                  <button
+                    onClick={() => setStatus("idle")}
+                    className="mt-3 text-sm font-medium text-foreground hover:underline"
+                  >
+                    Try Again
+                  </button>
                 </div>
-              </div>
-            </div>
-            {saveError && <p className="text-sm text-amber-600">{saveError}</p>}
+              )}
 
-            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
-              {Object.entries(result).filter(([, v]) => v != null).map(([key, value], i) => (
+              {status === "success" && results && (
                 <motion.div
-                  key={key}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="glass rounded-xl p-4"
+                  className="rounded-2xl bg-emerald-500/10 p-6 border border-emerald-500/20"
                 >
-                  <p className="text-xs font-medium text-muted-foreground">{metricLabels[key] || key}</p>
-                  <p className="mt-1 font-heading text-xl font-bold text-foreground">{value}</p>
+                  <div className="mb-4 flex items-center justify-center gap-2 text-emerald-600">
+                    <CheckCircle2 className="h-6 w-6" />
+                    <h3 className="font-bold">Extraction Successful!</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(results).map(([key, val]) => (
+                      <div key={key} className="rounded-lg bg-background p-3 text-center shadow-sm">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">
+                          {key.replace(/([A-Z])/g, " $1").trim()}
+                        </p>
+                        <p className="font-heading text-lg font-bold text-foreground">{String(val)}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Link
+                    href="/dashboard"
+                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 font-semibold text-white shadow-lg hover:bg-emerald-600"
+                  >
+                    View in Dashboard
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </motion.div>
-              ))}
+              )}
             </div>
-
-            <div className="flex gap-3">
-              <Link
-                href="/dashboard"
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3 text-sm font-semibold text-white shadow-lg"
-              >
-                View Dashboard <ArrowRight className="h-4 w-4" />
-              </Link>
-              <button
-                onClick={handleReset}
-                className="rounded-xl border border-border px-5 py-3 text-sm font-medium text-foreground hover:bg-muted"
-              >
-                Scan Again
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Info note */}
-        <div className="mt-8 flex items-start gap-3 rounded-xl bg-muted/50 p-4">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-          <p className="text-xs text-muted-foreground">
-            <strong>Privacy:</strong> Your report is processed locally and not stored on our servers. 
-            Only the extracted metrics are saved to your profile for wellness tracking.
-          </p>
+          )}
         </div>
       </div>
     </div>
