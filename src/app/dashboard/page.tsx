@@ -92,19 +92,34 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState({ analysis: false, meal: false });
   const [editingMetrics, setEditingMetrics] = useState(false);
 
-  // Fetch analysis on mount
   useEffect(() => {
-    fetchAnalysis();
-    fetchMealPlan();
+    async function init() {
+      let currentMetrics = metrics;
+      try {
+        const res = await fetch("/api/body-metrics");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.metric) {
+            currentMetrics = { ...defaultMetrics, ...data.metric };
+            setMetrics(currentMetrics);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load metrics:", err);
+      }
+      fetchAnalysis(currentMetrics);
+      fetchMealPlan(currentMetrics);
+    }
+    init();
   }, []);
 
-  async function fetchAnalysis() {
+  async function fetchAnalysis(currentMetrics = metrics) {
     setLoading((p) => ({ ...p, analysis: true }));
     try {
       const res = await fetch("/api/ai/body-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ metrics }),
+        body: JSON.stringify({ metrics: currentMetrics }),
       });
       const data = await res.json();
       setAnalysis(data);
@@ -115,13 +130,13 @@ export default function DashboardPage() {
     }
   }
 
-  async function fetchMealPlan() {
+  async function fetchMealPlan(currentMetrics = metrics) {
     setLoading((p) => ({ ...p, meal: true }));
     try {
       const res = await fetch("/api/ai/meal-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ goal: "weight management", bmi: metrics.bmi, bodyFat: metrics.bodyFat }),
+        body: JSON.stringify({ goal: "weight management", bmi: currentMetrics.bmi, bodyFat: currentMetrics.bodyFat }),
       });
       const data = await res.json();
       setMealPlan(data);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -162,8 +162,26 @@ export default function ProductsPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<(typeof products)[0] | null>(null);
+  const [productsList, setProductsList] = useState(products);
 
-  const filteredProducts = products.filter((p) => {
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const res = await fetch("/api/products");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.products && data.products.length > 0) {
+            setProductsList(data.products);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
+      }
+    }
+    fetchProducts();
+  }, []);
+
+  const filteredProducts = productsList.filter((p) => {
     const matchesCategory =
       activeCategory === "all" || p.category === activeCategory;
     const matchesSearch =
