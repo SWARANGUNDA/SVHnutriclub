@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { CartSheet } from "@/components/cart/CartSheet";
+import { useCartStore } from "@/lib/store/cart-store";
 import {
   Search,
   SlidersHorizontal,
@@ -163,6 +165,8 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<(typeof products)[0] | null>(null);
   const [productsList, setProductsList] = useState(products);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const { addItem, totalItems } = useCartStore();
 
   useEffect(() => {
     async function fetchProducts() {
@@ -464,19 +468,48 @@ export default function ProductsPage() {
                     <span className="text-2xl font-bold text-foreground">{selectedProduct.price}</span>
                     <span className="ml-2 text-sm text-muted-foreground line-through">{selectedProduct.originalPrice}</span>
                   </div>
-                  <Link
-                    href="/consultation"
+                  <button
+                    onClick={() => {
+                      // parse price string to number for demo (e.g. "₹2,199" -> 2199)
+                      const numericPrice = parseInt(selectedProduct.price.replace(/[^0-9]/g, "")) || 0;
+                      addItem({
+                        id: selectedProduct.id.toString(),
+                        name: selectedProduct.name,
+                        price: numericPrice,
+                        image: selectedProduct.image,
+                      });
+                      setSelectedProduct(null);
+                      setIsCartOpen(true);
+                    }}
                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl"
                   >
-                    Enquire Now
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
+                    Add to Cart
+                    <ShoppingBag className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+      {/* Floating Cart Button */}
+      {totalItems() > 0 && (
+        <motion.button
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          onClick={() => setIsCartOpen(true)}
+          className="fixed bottom-6 right-6 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-premium-lg transition-transform hover:scale-110"
+        >
+          <ShoppingBag className="h-6 w-6" />
+          <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white shadow-sm">
+            {totalItems()}
+          </span>
+        </motion.button>
+      )}
+
+      {/* Cart Sheet */}
+      <CartSheet isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
   );
 }

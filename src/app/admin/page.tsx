@@ -46,50 +46,81 @@ const mockSalesData = [
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [stats, setStats] = useState({ totalUsers: 2405, activeScans: 842, consultations: 156, totalSales: 45231 }); // defaults that get overwritten
 
   useEffect(() => {
-    generateSummary();
+    fetchDataAndGenerateSummary();
   }, []);
 
-  async function generateSummary() {
+  async function fetchDataAndGenerateSummary() {
     setLoading(true);
-    // Simulate AI generation delay
-    await new Promise((r) => setTimeout(r, 1500));
-    setAiSummary(
-      "Platform engagement is up 24% this week. Product recommendations are performing well, particularly 'Formula 1 Shake' which saw a 15% increase in conversions from the AI Meal Generator. Consider promoting 'Herbal Tea Concentrate' to users focusing on weight loss goals based on recent trend analysis."
-    );
+    let currentStats = stats;
+    try {
+      const res = await fetch("/api/admin/analytics");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.totalUsers !== undefined) {
+           currentStats = {
+             totalUsers: data.totalUsers || 0,
+             activeScans: data.activeScans || 0,
+             consultations: data.consultations || 0,
+             totalSales: data.totalSales || 0
+           };
+           setStats(currentStats);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch analytics:", e);
+    }
+
+    try {
+      const summaryRes = await fetch("/api/admin/ai-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ metrics: currentStats })
+      });
+      if (summaryRes.ok) {
+        const data = await summaryRes.json();
+        setAiSummary(data.summary || "Unable to generate summary.");
+      } else {
+        setAiSummary("Failed to generate summary due to API error.");
+      }
+    } catch (e) {
+       console.error("Failed to generate summary:", e);
+       setAiSummary("AI Summary currently unavailable.");
+    }
     setLoading(false);
   }
 
   const statCards = [
     {
       title: "Total Users",
-      value: "2,405",
-      change: "+12.5%",
+      value: stats.totalUsers.toLocaleString(),
+      change: "--",
       trend: "up",
       icon: Users,
       color: "from-blue-500 to-cyan-500",
     },
     {
       title: "Active Scans",
-      value: "842",
-      change: "+24.1%",
+      value: stats.activeScans.toLocaleString(),
+      change: "--",
       trend: "up",
       icon: Activity,
       color: "from-emerald-500 to-teal-500",
     },
     {
       title: "Consultations",
-      value: "156",
-      change: "-4.2%",
-      trend: "down",
+      value: stats.consultations.toLocaleString(),
+      change: "--",
+      trend: "up",
       icon: Calendar,
       color: "from-amber-500 to-orange-500",
     },
     {
       title: "Total Sales",
-      value: "$45,231",
-      change: "+8.4%",
+      value: `$${stats.totalSales.toLocaleString()}`,
+      change: "--",
       trend: "up",
       icon: ShoppingBag,
       color: "from-purple-500 to-pink-500",
@@ -118,7 +149,7 @@ export default function AdminDashboardPage() {
               </p>
             </div>
             <button
-              onClick={generateSummary}
+              onClick={fetchDataAndGenerateSummary}
               disabled={loading}
               className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-all hover:bg-primary/20 disabled:opacity-50"
             >

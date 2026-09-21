@@ -47,6 +47,14 @@ enum BlogStatus {
   ARCHIVED
 }
 
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
 // ======================== USER ========================
 
 model User {
@@ -72,6 +80,7 @@ model User {
   transformations Transformation[]
   auditLogs       AuditLog[]
   contactInquiries ContactInquiry[]
+  orders          Order[]
 
   @@map("users")
 }
@@ -292,4 +301,35 @@ model ContactInquiry {
 
   @@index([status, createdAt])
   @@map("contact_inquiries")
+}
+
+// ======================== ORDERS ========================
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String?
+  totalAmount     Float
+  status          OrderStatus @default(PENDING)
+  paymentId       String?
+  shippingAddress String?     @db.Text
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@map("order_items")
 }
