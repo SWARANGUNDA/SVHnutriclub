@@ -19,12 +19,18 @@ import { NAV_LINKS, LANGUAGES } from "@/lib/constants";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import { SmartSearch } from "@/components/shared/SmartSearch";
+import { UserNav } from "@/components/auth/UserNav";
 
 export function Header() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const { isMobileMenuOpen, toggleMobileMenu, setMobileMenuOpen, language, setLanguage } =
     useAppStore();
 
@@ -165,30 +171,30 @@ export function Header() {
                   aria-label="Toggle theme"
                 >
                   <AnimatePresence mode="wait" initial={false}>
-                    <motion.div
-                      key={theme}
-                      initial={{ y: -10, opacity: 0, rotate: -90 }}
-                      animate={{ y: 0, opacity: 1, rotate: 0 }}
-                      exit={{ y: 10, opacity: 0, rotate: 90 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {theme === "dark" ? (
-                        <Sun className="h-4.5 w-4.5" />
-                      ) : (
-                        <Moon className="h-4.5 w-4.5" />
-                      )}
-                    </motion.div>
+                    {mounted ? (
+                      <motion.div
+                        key={theme}
+                        initial={{ y: -10, opacity: 0, rotate: -90 }}
+                        animate={{ y: 0, opacity: 1, rotate: 0 }}
+                        exit={{ y: 10, opacity: 0, rotate: 90 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {theme === "dark" ? (
+                          <Sun className="h-4.5 w-4.5" />
+                        ) : (
+                          <Moon className="h-4.5 w-4.5" />
+                        )}
+                      </motion.div>
+                    ) : (
+                      <div className="h-4.5 w-4.5 opacity-0" />
+                    )}
                   </AnimatePresence>
               </button>
 
-              {/* Login / Profile Button */}
-              <Link
-                href="/login"
-                className="group hidden items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-emerald-500/25 hover:shadow-xl sm:flex"
-              >
-                <User className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                <span>Login</span>
-              </Link>
+              {/* User Navigation */}
+              <div className="hidden sm:block">
+                <UserNav />
+              </div>
 
               {/* Mobile Menu Toggle */}
               <button
@@ -292,13 +298,9 @@ export function Header() {
                   ))}
                 </div>
 
-                <Link
-                  href="/login"
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-lg"
-                >
-                  <User className="h-4 w-4" />
-                  Login / Sign Up
-                </Link>
+                <div className="flex justify-center mt-2">
+                  <UserNav />
+                </div>
               </div>
             </motion.div>
           </>

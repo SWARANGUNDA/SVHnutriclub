@@ -3,6 +3,7 @@
 import { signIn, signOut } from "@/lib/auth";
 import { signupSchema, loginSchema } from "@/lib/validations";
 import { AuthError } from "next-auth";
+import { logAudit } from "@/lib/audit";
 
 export type AuthResult = {
   success: boolean;
@@ -34,6 +35,7 @@ export async function signUpAction(formData: {
         await signIn("credentials", {
           email: normalizedEmail,
           password: "demo123", // In mock mode, use demo password
+          expectedRole: "CUSTOMER",
           redirect: false,
         });
         return { success: true };
@@ -59,7 +61,7 @@ export async function signUpAction(formData: {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    await db.user.create({
+    const newUser = await db.user.create({
       data: {
         name,
         email: normalizedEmail,
@@ -68,9 +70,17 @@ export async function signUpAction(formData: {
       },
     });
 
+    await logAudit({
+      userId: newUser.id,
+      action: "USER_SIGNUP",
+      entity: "USER",
+      entityId: newUser.id,
+    });
+
     await signIn("credentials", {
       email: normalizedEmail,
       password,
+      expectedRole: "CUSTOMER",
       redirect: false,
     });
 
@@ -90,6 +100,7 @@ export async function signUpAction(formData: {
 export async function signInAction(formData: {
   email: string;
   password: string;
+  expectedRole?: string;
 }): Promise<AuthResult> {
   try {
     const parsed = loginSchema.safeParse(formData);
@@ -100,12 +111,26 @@ export async function signInAction(formData: {
     await signIn("credentials", {
       email: parsed.data.email.toLowerCase(),
       password: parsed.data.password,
+      expectedRole: formData.expectedRole || "CUSTOMER",
       redirect: false,
+    });
+
+    // Fire-and-forget log (we don't have the user ID easily accessible here because NextAuth hides it until session is fetched, 
+    // but we log the attempt by email).
+    logAudit({
+      action: "USER_LOGIN_SUCCESS",
+      entity: "AUTH",
+      metadata: { email: parsed.data.email.toLowerCase() }
     });
 
     return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
+      logAudit({
+        action: "USER_LOGIN_FAILED",
+        entity: "AUTH",
+        metadata: { email: formData.email.toLowerCase(), error: error.type }
+      });
       switch (error.type) {
         case "CredentialsSignin":
           return {

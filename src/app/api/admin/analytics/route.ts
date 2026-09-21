@@ -10,13 +10,7 @@ export async function GET() {
   // Let's ensure the user is an ADMIN from DB to be safe.
   const dbUser = await db.user.findUnique({ where: { id: user!.id } });
   if (!dbUser || dbUser.role !== "ADMIN") {
-    // Return 403, but in development, we might not have an admin user set up easily.
-    // For now, let's just log a warning and allow it to pass for visual testing if mock mode.
-    if (process.env.DATABASE_URL?.includes("mock")) {
-      console.warn("[API] Admin check bypassed due to mock database mode.");
-    } else {
-      return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
-    }
+    return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
   }
 
   try {

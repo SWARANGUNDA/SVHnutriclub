@@ -44,6 +44,20 @@ export async function requireAdmin() {
 }
 
 /**
+ * Require associate role.
+ */
+export async function requireAssociate() {
+  return requireRole("ASSOCIATE");
+}
+
+/**
+ * Require customer role.
+ */
+export async function requireCustomer() {
+  return requireRole("CUSTOMER");
+}
+
+/**
  * API route helper — returns 401 JSON if not authenticated.
  * Use in route handlers (GET, POST, etc.).
  */
@@ -72,6 +86,42 @@ export async function requireAdminApi() {
       user: null,
       error: NextResponse.json(
         { error: "Forbidden — admin access required" },
+        { status: 403 }
+      ),
+    };
+  }
+  return { user, error: null };
+}
+
+/**
+ * API route helper — returns 403 JSON if not associate.
+ */
+export async function requireAssociateApi() {
+  const { user, error } = await requireAuthApi();
+  if (error) return { user: null, error };
+  if (user?.role !== "ASSOCIATE") {
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: "Forbidden — associate access required" },
+        { status: 403 }
+      ),
+    };
+  }
+  return { user, error: null };
+}
+
+/**
+ * API route helper — returns 403 JSON if not customer.
+ */
+export async function requireCustomerApi() {
+  const { user, error } = await requireAuthApi();
+  if (error) return { user: null, error };
+  if (user?.role !== "CUSTOMER") {
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: "Forbidden — customer access required" },
         { status: 403 }
       ),
     };

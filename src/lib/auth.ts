@@ -85,6 +85,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
+        const expectedRole = credentials?.expectedRole as Role | undefined;
+        
+        if (!expectedRole) {
+          console.error("[Auth] Missing expectedRole in credentials");
+          return null;
+        }
+
         const normalizedEmail = email.toLowerCase();
 
         // ----- Mock/Demo mode -----
@@ -97,6 +104,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (password === "demo123") {
             const demoUser = DEMO_USERS.find((u) => u.email === normalizedEmail);
             if (demoUser) {
+              if (demoUser.role !== expectedRole) return null;
               return {
                 id: demoUser.id,
                 name: demoUser.name,
@@ -105,13 +113,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 role: demoUser.role,
               };
             }
-            // Allow any email with demo123 as a customer
+            // Allow any email with demo123 as a customer/associate depending on expectedRole
             return {
               id: `user-${Date.now()}`,
               name: normalizedEmail.split("@")[0],
               email: normalizedEmail,
               image: null,
-              role: "CUSTOMER" as Role,
+              role: expectedRole,
             };
           }
           return null;
@@ -131,6 +139,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             user.hashedPassword
           );
           if (!isPasswordValid) return null;
+          
+          if (user.role !== expectedRole) {
+            console.error(`[Auth] Role mismatch. Expected ${expectedRole}, got ${user.role}`);
+            return null;
+          }
 
           return {
             id: user.id,
@@ -148,7 +161,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               name: normalizedEmail.split("@")[0],
               email: normalizedEmail,
               image: null,
-              role: "CUSTOMER" as Role,
+              role: expectedRole,
             };
           }
           return null;

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollProgress } from "@/components/shared/ScrollProgress";
@@ -83,17 +84,19 @@ export default function RootLayout({
       className={`${inter.variable} ${poppins.variable}`}
     >
       <body className="min-h-screen bg-background font-sans antialiased">
-        <ThemeProvider>
-          <ScrollProgress />
-          <div className="relative flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-          <ScrollToTop />
-          <VoiceAssistant />
-          <ServiceWorkerRegistration />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <ScrollProgress />
+            <div className="relative flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+            <ScrollToTop />
+            <VoiceAssistant />
+            <ServiceWorkerRegistration />
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

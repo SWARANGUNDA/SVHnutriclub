@@ -82,20 +82,22 @@ function getMockResponse(prompt: string, options: AIGenerateOptions): string {
   if (options.json) {
     if (lowerPrompt.includes("meal") || lowerPrompt.includes("nutrition")) {
       return JSON.stringify({
-        title: "Balanced Wellness Plan",
-        calories: 1800,
-        protein: 75,
-        carbs: 200,
-        fats: 60,
+        title: "Balanced Wellness Plan (7-Day)",
+        averageDailyCalories: 1800,
+        averageDailyProtein: 75,
         hydration: 3.0,
-        meals: {
-          breakfast: { name: "Herbalife Formula 1 Shake", calories: 220, protein: 18, description: "Blend with milk, banana, and ice for a nutritious start" },
-          midMorning: { name: "Herbal Tea + Almonds", calories: 150, protein: 5, description: "Green tea concentrate with 10 almonds for sustained energy" },
-          lunch: { name: "Grilled Paneer Salad Bowl", calories: 450, protein: 22, description: "Mixed greens, paneer, chickpeas, quinoa with olive oil dressing" },
-          evening: { name: "Protein Smoothie", calories: 200, protein: 15, description: "Protein drink mix with berries and yogurt" },
-          dinner: { name: "Vegetable Dal with Brown Rice", calories: 500, protein: 18, description: "Moong dal with seasonal vegetables and brown rice" },
-          bedtime: { name: "Warm Turmeric Milk", calories: 120, protein: 4, description: "Golden milk with turmeric and cinnamon for recovery" },
-        },
+        days: Array.from({ length: 7 }).map((_, i) => ({
+          dayNumber: i + 1,
+          totalCalories: 1800,
+          meals: {
+            breakfast: { name: "Herbalife Formula 1 Shake", calories: 220, protein: 18, description: "Blend with milk, banana, and ice for a nutritious start" },
+            midMorning: { name: "Herbal Tea + Almonds", calories: 150, protein: 5, description: "Green tea concentrate with 10 almonds for sustained energy" },
+            lunch: { name: "Grilled Paneer Salad Bowl", calories: 450, protein: 22, description: "Mixed greens, paneer, chickpeas, quinoa with olive oil dressing" },
+            evening: { name: "Protein Smoothie", calories: 200, protein: 15, description: "Protein drink mix with berries and yogurt" },
+            dinner: { name: "Vegetable Dal with Brown Rice", calories: 500, protein: 18, description: "Moong dal with seasonal vegetables and brown rice" },
+            bedtime: { name: "Warm Turmeric Milk", calories: 120, protein: 4, description: "Golden milk with turmeric and cinnamon for recovery" },
+          }
+        })),
         tips: [
           "Drink water 30 minutes before each meal",
           "Include a protein source in every meal",

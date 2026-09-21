@@ -1,31 +1,48 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-const protectedPrefixes = ["/dashboard", "/admin"];
-const authRoutes = ["/login"];
+export async function proxy(req: NextRequest) {
+  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+  const { pathname } = req.nextUrl;
 
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const sessionCookie =
-    request.cookies.get("authjs.session-token") ??
-    request.cookies.get("__Secure-authjs.session-token");
-  const isLoggedIn = Boolean(sessionCookie);
-
-  if (authRoutes.some((route) => pathname.startsWith(route))) {
-    return isLoggedIn
-      ? NextResponse.redirect(new URL("/dashboard", request.url))
-      : NextResponse.next();
+  // Protect /admin routes
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/admin/login", req.url));
+    }
+    if (token.role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/login", req.url)); // unauthorized role
+    }
   }
 
-  if (protectedPrefixes.some((prefix) => pathname.startsWith(prefix)) && !isLoggedIn) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+  // Protect /associate routes
+  if (pathname.startsWith("/associate") && !pathname.startsWith("/associate/login")) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/associate/login", req.url));
+    }
+    if (token.role !== "ASSOCIATE") {
+      return NextResponse.redirect(new URL("/login", req.url)); // unauthorized role
+    }
+  }
+
+  // Protect /dashboard routes (CUSTOMER only)
+  if (pathname.startsWith("/dashboard")) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    if (token.role !== "CUSTOMER") {
+      // If admin/associate tries to access dashboard, send them to their respective portal
+      if (token.role === "ADMIN") return NextResponse.redirect(new URL("/admin", req.url));
+      if (token.role === "ASSOCIATE") return NextResponse.redirect(new URL("/associate", req.url));
+      
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)"],
+  matcher: ["/admin/:path*", "/associate/:path*", "/dashboard/:path*"],
 };

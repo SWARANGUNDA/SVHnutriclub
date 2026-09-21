@@ -129,32 +129,32 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen pt-24 pb-16">
-      {/* Header */}
-      <section className="relative overflow-hidden bg-gradient-hero py-10">
-        <div className="bg-grid pointer-events-none absolute inset-0 opacity-30" />
+      {/* Admin Header */}
+      <section className="relative overflow-hidden bg-zinc-950 border-b border-white/10 py-12">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                <BrainCircuit className="h-5 w-5 text-primary" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-                  AI Analytics Dashboard
+              <div className="flex items-center gap-2 mb-2">
+                <span className="flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-2.5 py-1 text-xs font-semibold text-indigo-400 border border-indigo-500/20">
+                  <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                  Admin Control Panel
                 </span>
               </div>
-              <h1 className="mt-2 font-heading text-3xl font-bold text-foreground">
-                Platform Overview
+              <h1 className="font-heading text-4xl font-bold text-white">
+                Platform Intelligence
               </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Real-time insights and AI-generated performance summaries.
+              <p className="mt-2 text-sm text-zinc-400">
+                System-wide analytics, user growth, and AI-generated performance summaries.
               </p>
             </div>
             <button
               onClick={fetchDataAndGenerateSummary}
               disabled={loading}
-              className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-all hover:bg-primary/20 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-indigo-500 disabled:opacity-50 shadow-lg shadow-indigo-900/20"
             >
               <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-              Refresh Data
+              Sync Data
             </button>
           </div>
         </div>

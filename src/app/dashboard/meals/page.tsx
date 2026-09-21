@@ -38,7 +38,9 @@ interface MealPlan {
   provider: string;
 }
 
-const mealIcons: Record<string, React.ElementType> = {
+import { LucideIcon } from "lucide-react";
+
+const mealIcons: Record<string, LucideIcon> = {
   breakfast: Sun,
   midMorning: Coffee,
   lunch: Utensils,

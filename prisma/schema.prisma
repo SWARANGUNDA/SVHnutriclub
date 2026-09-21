@@ -17,6 +17,7 @@ datasource db {
 enum Role {
   GUEST
   CUSTOMER
+  ASSOCIATE
   ADMIN
 }
 
@@ -71,7 +72,16 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  // Hierarchy fields for Admin -> Associate -> Customer
+  adminId        String?
+  associateId    String?
+
   // Relations
+  admin           User?          @relation("AdminToAssociate", fields: [adminId], references: [id])
+  associates      User[]         @relation("AdminToAssociate")
+  associate       User?          @relation("AssociateToCustomer", fields: [associateId], references: [id])
+  customers       User[]         @relation("AssociateToCustomer")
+
   accounts        Account[]
   consultations   Consultation[]
   bodyMetrics     BodyMetric[]
@@ -81,6 +91,22 @@ model User {
   auditLogs       AuditLog[]
   contactInquiries ContactInquiry[]
   orders          Order[]
+  
+  // Phase 1 Relations
+  habits                 Habit[]
+  challengeParticipations ChallengeParticipation[]
+  reminders              Reminder[]
+  journalEntries         JournalEntry[]
+  membership             Membership?
+  aiReports              AIReport[]
+  ocrReports             OCRReport[]
+  nutritionScans         NutritionScan[]
+  aiUsages               AIUsage[]
+  sentMessages           ConsultationMessage[]
+  wellnessProfile        WellnessProfile?
+  goals                  Goal[]
+  nutritionLogs          NutritionLog[]
+  wellnessPlans          WellnessPlan[]
 
   @@map("users")
 }
@@ -128,6 +154,8 @@ model Product {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
+  orderItems    OrderItem[]
+
   @@map("products")
 }
 
@@ -171,6 +199,7 @@ model Consultation {
   updatedAt DateTime           @updatedAt
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages ConsultationMessage[]
 
   @@map("consultations")
 }
@@ -202,23 +231,25 @@ model Transformation {
 // ======================== BODY METRICS ========================
 
 model BodyMetric {
-  id           String   @id @default(cuid())
-  userId       String
-  weight       Float?
-  height       Float?
-  bmi          Float?
-  bmr          Float?
-  bodyFat      Float?
-  muscleMass   Float?
-  visceralFat  Float?
-  waterPercent Float?
-  boneMass     Float?
-  metabolicAge Int?
-  healthScore  Float?
-  notes        String?  @db.Text
-  source       String?  // e.g., "manual", "ocr", "smart-scale"
-  measuredAt   DateTime @default(now())
-  createdAt    DateTime @default(now())
+  id               String   @id @default(cuid())
+  userId           String
+  weight           Float?
+  height           Float?
+  bmi              Float?
+  bmr              Float?
+  bodyFat          Float?
+  muscleMass       Float?
+  visceralFat      Float?
+  subcutaneousFat  Float?
+  waterPercent     Float?
+  boneMass         Float?
+  metabolicAge     Int?
+  chronologicalAge Int?
+  healthScore      Float?
+  notes            String?  @db.Text
+  source           String?  // e.g., "manual", "ocr", "smart-scale"
+  measuredAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -332,4 +363,276 @@ model OrderItem {
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@map("order_items")
+}
+
+// ======================== NEW MODELS (PHASE 1) ========================
+
+model Habit {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?  @db.Text
+  frequency   String   @default("DAILY")
+  streak      Int      @default(0)
+  longestStreak Int    @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs HabitLog[]
+
+  @@map("habits")
+}
+
+model HabitLog {
+  id        String   @id @default(cuid())
+  habitId   String
+  date      DateTime @default(now())
+  completed Boolean  @default(true)
+  notes     String?  @db.Text
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@map("habit_logs")
+}
+
+model Challenge {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  duration    Int      // in days
+  goal        String
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  participants ChallengeParticipation[]
+
+  @@map("challenges")
+}
+
+model ChallengeParticipation {
+  id          String   @id @default(cuid())
+  userId      String
+  challengeId String
+  progress    Int      @default(0)
+  completed   Boolean  @default(false)
+  joinedAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@map("challenge_participations")
+}
+
+model Reminder {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?  @db.Text
+  type        String   // e.g., "WATER", "MEAL", "HABIT", "CONSULTATION"
+  time        String   // "HH:MM"
+  days        Int[]    // 0 = Sunday, 1 = Monday, etc.
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reminders")
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String?
+  content   String   @db.Text
+  mood      String?
+  aiSummary String?  @db.Text
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("journal_entries")
+}
+
+model Membership {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  qrCode      String   @unique @default(cuid()) // Unique safe identifier
+  status      String   @default("ACTIVE") // ACTIVE, EXPIRED, SUSPENDED
+  plan        String   @default("BASIC")
+  startDate   DateTime @default(now())
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("memberships")
+}
+
+model AIReport {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  content   String   @db.Text
+  type      String   // e.g., "WELLNESS", "MONTHLY_REVIEW"
+  metadata  Json?    // Store related data snapshots
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_reports")
+}
+
+model OCRReport {
+  id          String   @id @default(cuid())
+  userId      String
+  fileUrl     String
+  fileName    String
+  status      String   @default("PENDING") // PENDING, EXTRACTED, VERIFIED, FAILED
+  extractedData Json?
+  confidence  Float?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ocr_reports")
+}
+
+model NutritionScan {
+  id             String   @id @default(cuid())
+  userId         String
+  imageUrl       String
+  foodIdentified String?
+  calories       Int?
+  protein        Float?
+  carbs          Float?
+  fats           Float?
+  confidence     Float?
+  explanation    String?  @db.Text
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("nutrition_scans")
+}
+
+model AIUsage {
+  id        String   @id @default(cuid())
+  userId    String?
+  provider  String   // "GROQ", "GEMINI"
+  feature   String   // "MEAL_PLAN", "OCR", "SCAN", "CHAT"
+  tokens    Int      @default(0)
+  latencyMs Int      @default(0)
+  success   Boolean  @default(true)
+  error     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("ai_usage")
+}
+
+model ConsultationMessage {
+  id             String   @id @default(cuid())
+  consultationId String
+  senderId       String
+  content        String   @db.Text
+  isAi           Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  consultation Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("consultation_messages")
+}
+
+// ======================== NEW MODELS (PHASE 25) ========================
+
+model WellnessProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  age               Int?
+  gender            String?
+  dietaryPreference String?
+  foodAllergies     String?
+  foodDislikes      String?
+  wellnessGoal      String?
+  activityLevel     String?
+  preferredLanguage String   @default("en-US")
+  climate           String?
+  sleepTarget       Float?
+  waterTarget       Float?
+  dailyStepsTarget  Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wellness_profiles")
+}
+
+model Goal {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  type          String   // e.g., "WEIGHT_LOSS", "MUSCLE_GAIN"
+  startingValue Float?
+  currentValue  Float?
+  targetValue   Float?
+  unit          String?
+  targetDate    DateTime?
+  status        String   @default("ACTIVE") // ACTIVE, COMPLETED, ABANDONED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("goals")
+}
+
+model NutritionLog {
+  id            String   @id @default(cuid())
+  userId        String
+  mealType      String   // e.g., "BREAKFAST", "LUNCH"
+  foodName      String
+  calories      Int?
+  protein       Float?
+  carbs         Float?
+  fats          Float?
+  fiber         Float?
+  imageUrl      String?
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("nutrition_logs")
+}
+
+model WellnessPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  duration    Int      // e.g., 7 or 30 days
+  planData    Json     // AI generated plan structure
+  isActive    Boolean  @default(true)
+  startDate   DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wellness_plans")
 }

@@ -1,93 +1,287 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Bell, Sparkles, Droplets, Dumbbell, Pill, Utensils, Scale, Calendar, Clock, ToggleLeft, ToggleRight, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bell, Clock, Trash2, Plus, Droplets, Utensils, Target, CalendarHeart, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 
-interface Reminder {
-  id: string;
-  title: string;
-  description: string;
-  time: string;
-  icon: React.ElementType;
-  color: string;
-  enabled: boolean;
-  frequency: string;
-}
+const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
 
-const defaultReminders: Reminder[] = [
-  { id: "water1", title: "Morning Water", description: "Start your day with 2 glasses of water", time: "07:00", icon: Droplets, color: "from-sky-500 to-blue-500", enabled: true, frequency: "Daily" },
-  { id: "supplement1", title: "Morning Supplements", description: "Cell Activator + Aloe Vera", time: "07:30", icon: Pill, color: "from-pink-500 to-rose-500", enabled: true, frequency: "Daily" },
-  { id: "meal1", title: "Breakfast Shake", description: "Formula 1 Nutritional Shake", time: "08:00", icon: Utensils, color: "from-emerald-500 to-teal-500", enabled: true, frequency: "Daily" },
-  { id: "water2", title: "Mid-Morning Water", description: "Hydration reminder — 2 glasses", time: "10:30", icon: Droplets, color: "from-sky-500 to-blue-500", enabled: true, frequency: "Daily" },
-  { id: "workout", title: "Workout Time", description: "30 min exercise session", time: "17:00", icon: Dumbbell, color: "from-orange-500 to-red-500", enabled: true, frequency: "Mon-Fri" },
-  { id: "track", title: "Body Tracking", description: "Log today's weight and metrics", time: "20:00", icon: Scale, color: "from-purple-500 to-indigo-500", enabled: false, frequency: "Weekly" },
-  { id: "consult", title: "Consultation Reminder", description: "Upcoming wellness consultation", time: "10:00", icon: Calendar, color: "from-amber-500 to-yellow-500", enabled: false, frequency: "As scheduled" },
-];
+const typeIcons: Record<string, any> = {
+  WATER: Droplets,
+  MEAL: Utensils,
+  HABIT: Target,
+  CONSULTATION: CalendarHeart,
+  OTHER: Bell,
+};
+
+const typeColors: Record<string, string> = {
+  WATER: "text-blue-500 bg-blue-500/10",
+  MEAL: "text-emerald-500 bg-emerald-500/10",
+  HABIT: "text-purple-500 bg-purple-500/10",
+  CONSULTATION: "text-amber-500 bg-amber-500/10",
+  OTHER: "text-gray-500 bg-gray-500/10",
+};
 
 export default function RemindersPage() {
-  const [reminders, setReminders] = useState(defaultReminders);
+  const [reminders, setReminders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    type: "WATER",
+    time: "08:00",
+    days: [0, 1, 2, 3, 4, 5, 6],
+  });
 
-  const toggleReminder = (id: string) => {
-    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)));
+  useEffect(() => {
+    fetchReminders();
+  }, []);
+
+  const fetchReminders = async () => {
+    try {
+      const res = await fetch("/api/reminders");
+      if (res.ok) {
+        const data = await res.json();
+        setReminders(data.reminders || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const enabledCount = reminders.filter((r) => r.enabled).length;
+  const toggleReminder = async (id: string, currentStatus: boolean) => {
+    // Optimistic update
+    setReminders(prev => prev.map(r => r.id === id ? { ...r, isActive: !currentStatus } : r));
+    try {
+      await fetch(`/api/reminders/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !currentStatus })
+      });
+    } catch (err) {
+      console.error(err);
+      fetchReminders(); // Revert on failure
+    }
+  };
+
+  const deleteReminder = async (id: string) => {
+    setReminders(prev => prev.filter(r => r.id !== id));
+    try {
+      await fetch(`/api/reminders/${id}`, { method: "DELETE" });
+    } catch (err) {
+      console.error(err);
+      fetchReminders();
+    }
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/reminders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        setIsCreating(false);
+        fetchReminders();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const toggleDay = (dayIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      days: prev.days.includes(dayIndex)
+        ? prev.days.filter(d => d !== dayIndex)
+        : [...prev.days, dayIndex].sort()
+    }));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pt-24 flex items-center justify-center">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-24 pb-16">
-      <section className="relative overflow-hidden bg-gradient-hero py-10">
-        <div className="bg-grid pointer-events-none absolute inset-0 opacity-30" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-500/10">
+              <Bell className="h-6 w-6 text-teal-500" />
+            </div>
             <div>
-              <div className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-primary">Smart Reminders</span>
-              </div>
-              <h1 className="mt-2 font-heading text-3xl font-bold text-foreground">Stay On Track</h1>
-              <p className="mt-1 text-sm text-muted-foreground">{enabledCount} active reminders helping you stay consistent</p>
+              <h1 className="font-heading text-3xl font-bold text-foreground">Smart Reminders</h1>
+              <p className="text-muted-foreground">Manage notifications for your wellness routine.</p>
             </div>
           </div>
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 mt-8 space-y-4">
-        {reminders.map((reminder, i) => (
-          <motion.div
-            key={reminder.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className={cn("glass rounded-2xl p-4 transition-all", !reminder.enabled && "opacity-50")}
+          <button
+            onClick={() => setIsCreating(!isCreating)}
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-semibold text-primary-foreground shadow-lg hover:bg-primary/90 transition-all"
           >
-            <div className="flex items-center gap-4">
-              <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br", reminder.color)}>
-                <reminder.icon className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-foreground">{reminder.title}</h3>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{reminder.frequency}</span>
-                </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">{reminder.description}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {reminder.time}
-                </div>
-                <button onClick={() => toggleReminder(reminder.id)} className="text-primary">
-                  {reminder.enabled ? <ToggleRight className="h-7 w-7" /> : <ToggleLeft className="h-7 w-7 text-muted-foreground" />}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+            {isCreating ? "Cancel" : <><Plus className="h-4 w-4" /> Add Reminder</>}
+          </button>
+        </div>
 
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">← Back to Dashboard</Link>
+        <AnimatePresence>
+          {isCreating && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-8 overflow-hidden"
+            >
+              <form onSubmit={handleCreate} className="glass rounded-3xl p-6">
+                <h3 className="font-heading text-lg font-bold mb-4">Create New Reminder</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase text-muted-foreground">Title</label>
+                    <input
+                      required
+                      type="text"
+                      placeholder="e.g. Drink Water"
+                      value={formData.title}
+                      onChange={e => setFormData({ ...formData, title: e.target.value })}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase text-muted-foreground">Type</label>
+                    <select
+                      value={formData.type}
+                      onChange={e => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm focus:border-primary focus:outline-none"
+                    >
+                      <option value="WATER">Hydration</option>
+                      <option value="MEAL">Meal</option>
+                      <option value="HABIT">Habit</option>
+                      <option value="CONSULTATION">Consultation</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase text-muted-foreground">Time</label>
+                    <input
+                      required
+                      type="time"
+                      value={formData.time}
+                      onChange={e => setFormData({ ...formData, time: e.target.value })}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase text-muted-foreground">Repeat Days</label>
+                    <div className="flex gap-1 mt-1">
+                      {daysOfWeek.map((day, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => toggleDay(i)}
+                          className={cn(
+                            "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors",
+                            formData.days.includes(i) ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-border"
+                          )}
+                        >
+                          {day}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-end">
+                  <button type="submit" className="rounded-xl bg-primary px-6 py-2 font-bold text-white hover:bg-primary/90">
+                    Save Reminder
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {reminders.length === 0 && !isCreating ? (
+          <div className="glass rounded-3xl p-12 text-center">
+            <Bell className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-4" />
+            <h2 className="text-xl font-bold">No Reminders Yet</h2>
+            <p className="text-muted-foreground mt-2">Set up smart reminders to stay on track.</p>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {reminders.map((reminder) => {
+              const Icon = typeIcons[reminder.type] || Bell;
+              const colorClass = typeColors[reminder.type] || typeColors.OTHER;
+
+              return (
+                <motion.div
+                  key={reminder.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={cn(
+                    "glass flex items-center justify-between rounded-2xl p-4 transition-all hover:shadow-md",
+                    !reminder.isActive && "opacity-60 grayscale"
+                  )}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={cn("flex h-12 w-12 items-center justify-center rounded-xl", colorClass)}>
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-heading text-lg font-bold text-foreground">
+                        {reminder.title}
+                      </h3>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                        <span className="flex items-center gap-1 font-semibold">
+                          <Clock className="h-3 w-3" />
+                          {reminder.time}
+                        </span>
+                        <div className="flex gap-0.5">
+                          {daysOfWeek.map((day, i) => (
+                            <span key={i} className={cn("px-1", reminder.days.includes(i) ? "text-primary font-bold" : "text-muted-foreground/30")}>
+                              {day}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    {/* Toggle Switch */}
+                    <button
+                      onClick={() => toggleReminder(reminder.id, reminder.isActive)}
+                      className={cn(
+                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                        reminder.isActive ? "bg-primary" : "bg-muted"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                          reminder.isActive ? "translate-x-6" : "translate-x-1"
+                        )}
+                      />
+                    </button>
+                    
+                    <button
+                      onClick={() => deleteReminder(reminder.id)}
+                      className="rounded-lg p-2 text-red-500 hover:bg-red-500/10 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

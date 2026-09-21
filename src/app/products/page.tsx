@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { CartSheet } from "@/components/cart/CartSheet";
 import { useCartStore } from "@/lib/store/cart-store";
+import { ThreeProductViewer } from "@/components/ui/ThreeProductViewer";
 import {
   Search,
   SlidersHorizontal,
@@ -434,18 +435,18 @@ export default function ProductsPage() {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="glass-strong fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl shadow-premium-lg"
             >
-              <div className={cn("relative flex h-56 items-center justify-center bg-gradient-to-br", selectedProduct.gradient)}>
-                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
-                  <ShoppingBag className="h-12 w-12 text-primary" />
+              <div className="relative h-64 w-full">
+                <div className="absolute inset-0 z-0">
+                  <ThreeProductViewer name={selectedProduct.name} />
                 </div>
                 <button
                   onClick={() => setSelectedProduct(null)}
-                  className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30"
+                  className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30"
                 >
                   <X className="h-4 w-4" />
                 </button>
                 {selectedProduct.badge && (
-                  <div className={cn("absolute left-4 top-4 rounded-full bg-gradient-to-r px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white", selectedProduct.badgeColor)}>
+                  <div className={cn("absolute left-4 top-4 z-20 rounded-full bg-gradient-to-r px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white", selectedProduct.badgeColor)}>
                     {selectedProduct.badge}
                   </div>
                 )}

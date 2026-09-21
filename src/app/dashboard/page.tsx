@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { ThreeBodyModel } from "@/components/ui/ThreeBodyModel";
+import { FeatureCarousel } from "@/components/dashboard/FeatureCarousel";
 
 // Types
 interface HealthInsight {
@@ -47,12 +49,14 @@ interface MealItem {
 
 interface MealPlan {
   title: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
+  averageDailyCalories: number;
+  averageDailyProtein: number;
   hydration: number;
-  meals: Record<string, MealItem>;
+  days: {
+    dayNumber: number;
+    totalCalories: number;
+    meals: Record<string, MealItem>;
+  }[];
   tips: string[];
   provider: string;
 }
@@ -147,6 +151,21 @@ export default function DashboardPage() {
     }
   }
 
+  async function saveMetrics() {
+    try {
+      const res = await fetch("/api/body-metrics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...metrics, source: "manual" }),
+      });
+      if (res.ok) {
+        fetchAnalysis(metrics);
+      }
+    } catch (err) {
+      console.error("Failed to save metrics", err);
+    }
+  }
+
   const metricCards = [
     { label: "Weight", value: `${metrics.weight} kg`, icon: Scale, color: "from-emerald-500 to-teal-500" },
     { label: "BMI", value: metrics.bmi.toFixed(1), icon: Activity, color: "from-blue-500 to-cyan-500" },
@@ -160,6 +179,11 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen pt-24 pb-16">
+      {/* AI Feature & Offers Carousel */}
+      <div className="mx-auto max-w-[1400px]">
+        <FeatureCarousel />
+      </div>
+
       {/* Header */}
       <section className="relative overflow-hidden bg-gradient-hero py-10">
         <div className="bg-grid pointer-events-none absolute inset-0 opacity-30" />
@@ -180,6 +204,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <button
+              suppressHydrationWarning
               onClick={() => { fetchAnalysis(); fetchMealPlan(); }}
               className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-all hover:bg-primary/20"
             >
@@ -191,55 +216,71 @@ export default function DashboardPage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
-        {/* Health Score Card */}
-        {analysis && (
+        {/* Health Score & 3D Body Card */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {analysis && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass glow-green flex flex-col justify-between rounded-3xl p-6 sm:p-8"
+            >
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-6">
+                  <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
+                    <span className="font-heading text-3xl font-bold text-white">
+                      {analysis.healthScore}
+                    </span>
+                    <span className="absolute -bottom-1 rounded-full bg-background px-2 py-0.5 text-xs font-bold text-primary shadow-sm">
+                      {analysis.grade}
+                    </span>
+                  </div>
+                  <div>
+                    <h2 className="font-heading text-xl font-bold text-foreground">Health Score</h2>
+                    <p className="mt-1 max-w-md text-sm text-muted-foreground">
+                      {analysis.summary}
+                    </p>
+                    <span className="mt-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      AI Provider: {analysis.provider}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Link
+                    href="/dashboard/meals"
+                    className="flex items-center gap-1 rounded-xl bg-primary/10 px-4 py-2 text-xs font-medium text-primary hover:bg-primary/20"
+                  >
+                    <Utensils className="h-3.5 w-3.5" />
+                    Meal Plan
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* 3D Body Visualization */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass glow-green rounded-3xl p-6 sm:p-8"
+            transition={{ delay: 0.1 }}
+            className="flex h-full w-full items-center justify-center rounded-3xl"
           >
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-6">
-                <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
-                  <span className="font-heading text-3xl font-bold text-white">
-                    {analysis.healthScore}
-                  </span>
-                  <span className="absolute -bottom-1 rounded-full bg-background px-2 py-0.5 text-xs font-bold text-primary shadow-sm">
-                    {analysis.grade}
-                  </span>
-                </div>
-                <div>
-                  <h2 className="font-heading text-xl font-bold text-foreground">Health Score</h2>
-                  <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                    {analysis.summary}
-                  </p>
-                  <span className="mt-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                    AI Provider: {analysis.provider}
-                  </span>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Link
-                  href="/dashboard/meals"
-                  className="flex items-center gap-1 rounded-xl bg-primary/10 px-4 py-2 text-xs font-medium text-primary hover:bg-primary/20"
-                >
-                  <Utensils className="h-3.5 w-3.5" />
-                  Meal Plan
-                </Link>
-              </div>
-            </div>
+            <ThreeBodyModel metrics={{ ...metrics, score: analysis?.healthScore || 85 }} />
           </motion.div>
-        )}
+        </div>
 
         {/* Metric Cards Grid */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-heading text-lg font-bold text-foreground">Body Metrics</h2>
             <button
-              onClick={() => setEditingMetrics(!editingMetrics)}
+              suppressHydrationWarning
+              onClick={() => {
+                if (editingMetrics) saveMetrics();
+                setEditingMetrics(!editingMetrics);
+              }}
               className="text-xs font-medium text-primary hover:underline"
             >
-              {editingMetrics ? "Done" : "Edit Metrics"}
+              {editingMetrics ? "Save" : "Edit Metrics"}
             </button>
           </div>
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
@@ -337,18 +378,18 @@ export default function DashboardPage() {
         )}
 
         {/* Meal Plan Preview */}
-        {mealPlan && mealPlan.meals && (
+        {mealPlan && mealPlan.days && mealPlan.days[0] && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-lg font-bold text-foreground">
-                Today&apos;s Meal Plan
+                Today&apos;s Meal Plan (Day 1)
               </h2>
               <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {mealPlan.calories} cal · {mealPlan.protein}g protein
+                {mealPlan.days[0].totalCalories} cal
               </span>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {Object.entries(mealPlan.meals).map(([key, meal], i) => (
+              {Object.entries(mealPlan.days[0].meals).map(([key, meal], i) => (
                 <motion.div
                   key={key}
                   initial={{ opacity: 0, y: 10 }}
@@ -366,6 +407,14 @@ export default function DashboardPage() {
                   <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{meal.description}</p>
                 </motion.div>
               ))}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Link
+                href="/dashboard/meals"
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                View Full 7-Day Plan &rarr;
+              </Link>
             </div>
           </div>
         )}
@@ -387,6 +436,7 @@ export default function DashboardPage() {
             {[
               { href: "/dashboard/meals", label: "Meal Plan", emoji: "🍽️", color: "from-emerald-500 to-teal-500" },
               { href: "/dashboard/scan", label: "Body Scan", emoji: "📸", color: "from-blue-500 to-cyan-500" },
+              { href: "/dashboard/food-scan", label: "Food Scan", emoji: "🥗", color: "from-green-500 to-emerald-600" },
               { href: "/dashboard/recommendations", label: "Product Recs", emoji: "🎯", color: "from-purple-500 to-pink-500" },
               { href: "/dashboard/report", label: "AI Report", emoji: "📊", color: "from-amber-500 to-orange-500" },
               { href: "/dashboard/habits", label: "Habit Tracker", emoji: "✅", color: "from-sky-500 to-blue-500" },

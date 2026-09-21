@@ -82,9 +82,12 @@ export const bodyMetricsSchema = z.object({
   bodyFat: metricValue,
   muscleMass: metricValue,
   visceralFat: metricValue,
+  subcutaneousFat: metricValue,
   waterPercent: metricValue,
   boneMass: metricValue,
   metabolicAge: z.number().int().min(0).max(150).optional(),
+  chronologicalAge: z.number().int().min(0).max(150).optional(),
+  healthScore: metricValue,
 }).strict();
 
 export const bodyAnalysisRequestSchema = z.object({ metrics: bodyMetricsSchema.default({}) }).strict();

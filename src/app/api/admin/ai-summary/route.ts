@@ -9,11 +9,7 @@ export async function POST(req: Request) {
 
   const dbUser = await db.user.findUnique({ where: { id: user!.id } });
   if (!dbUser || dbUser.role !== "ADMIN") {
-    if (process.env.DATABASE_URL?.includes("mock")) {
-      console.warn("[API] Admin check bypassed due to mock database mode.");
-    } else {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {
@@ -30,13 +26,12 @@ Metrics: ${JSON.stringify(metrics, null, 2)}`;
       temperature: 0.5,
     });
 
-    let summaryText = result.text;
     if (result.provider === "mock") {
-        summaryText = `Based on the latest data (${metrics.totalUsers || 0} users, ${metrics.activeScans || 0} scans), the platform is showing solid baseline activity. Consider launching targeted promotions to convert consultations into active sales.`;
+        return NextResponse.json({ error: "AI_NOT_CONFIGURED" }, { status: 501 });
     }
 
     return NextResponse.json({
-      summary: summaryText,
+      summary: result.text,
       provider: result.provider
     });
   } catch (cause) {

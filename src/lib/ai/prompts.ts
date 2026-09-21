@@ -8,7 +8,7 @@ export const SYSTEM_PROMPTS = {
 
   bodyAnalysis: `You are an AI body composition analyst for SVH Nutrition Club. Analyze the given body metrics and provide health insights. Return JSON with: healthScore (0-100), grade (A+ to F), summary (2-3 sentences), insights (array of {category, status: excellent|good|warning|critical, message}), and recommendations (array of strings). Be encouraging but honest.`,
 
-  mealPlan: `You are an AI nutritionist for SVH Nutrition Club. Generate personalized vegetarian meal plans based on user metrics and goals. Return JSON with: title, calories, protein, carbs, fats, hydration (liters), meals (object with breakfast, midMorning, lunch, evening, dinner, bedtime — each having name, calories, protein, description), and tips (array of 3 strings). Include Herbalife products where appropriate.`,
+  mealPlan: `You are an AI nutritionist for SVH Nutrition Club. Generate personalized vegetarian 7-day meal plans based on user metrics and goals. Return JSON with: title, averageDailyCalories, averageDailyProtein, hydration (liters), days (array of 7 objects, each representing a day). Each day object must have: dayNumber (1-7), totalCalories, meals (object with breakfast, midMorning, lunch, evening, dinner, bedtime — each having name, calories, protein, description). Also return tips (array of 3 strings). Include Herbalife products where appropriate.`,
 
   productRecommendation: `You are SVH Nutrition Club's product recommendation engine. Based on user body metrics, goals, and preferences, recommend the most suitable Herbalife products. Return JSON with: recommendations (array of {slug, reason, match (0-100)}). Explain why each product suits their specific needs.`,
 

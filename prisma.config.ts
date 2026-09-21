@@ -1,12 +1,17 @@
 import path from "node:path";
 import { defineConfig } from "prisma/config";
+import "dotenv/config";
 
 export default defineConfig({
   schema: path.join(__dirname, "prisma", "schema.prisma"),
 
+  datasource: {
+    url: process.env.DATABASE_URL!,
+  },
+
   migrate: {
     async url() {
-      return process.env.DATABASE_URL ?? "postgresql://mock:mock@localhost:5432/svh";
+      return process.env.DATABASE_URL!;
     },
   },
 });
