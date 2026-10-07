@@ -4,9 +4,10 @@ import { redirect } from "next/navigation";
 import { AICarousel } from "@/components/dashboard/AICarousel";
 import { 
   Activity, ArrowRight, Target, Utensils, Droplet, Flame, CheckCircle2, 
-  Sparkles, TrendingUp, Sun, ChevronRight, Plus, Mic, Calendar, ChevronLeft, Home
+  Sparkles, TrendingUp, Sun, ChevronRight, Plus, Mic, Calendar, ChevronLeft, Home, Scan, FileText, ShoppingBag, Bot
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default async function CustomerDashboardPage() {
   const session = await auth();
