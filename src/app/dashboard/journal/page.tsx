@@ -1,118 +1,122 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { BookOpen, Edit3, Loader2, Save } from "lucide-react";
+import { BookOpen, Trophy, PlayCircle, Edit3, Lock } from "lucide-react";
+import Link from "next/link";
 
-interface JournalEntry {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: string;
-}
-
-export default function JournalPage() {
-  const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [content, setContent] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetchEntries();
-  }, []);
-
-  async function fetchEntries() {
-    try {
-      const res = await fetch("/api/journal");
-      const data = await res.json();
-      if (data.entries) setEntries(data.entries);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleSave() {
-    if (!content.trim()) return;
-    setSaving(true);
-    try {
-      const res = await fetch("/api/journal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
-      if (res.ok) {
-        setContent("");
-        fetchEntries();
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen p-8 pt-24 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
+export default function JournalAndEducationPage() {
   return (
-    <div className="min-h-screen p-8 pt-24 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold font-heading">Wellness Journal</h1>
-          <p className="text-muted-foreground mt-2">Reflect on your daily feelings, diet, and progress.</p>
-        </div>
-      </div>
+    <div className="flex flex-col gap-10">
       
-      {/* New Entry */}
-      <div className="bg-muted/20 border border-border rounded-2xl p-6 mb-12 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-        <div className="flex items-center gap-2 text-muted-foreground mb-4">
-          <Edit3 className="h-5 w-5" />
-          <span className="text-sm font-medium">New Entry</span>
-        </div>
-        <textarea 
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="w-full bg-transparent border-none focus:ring-0 resize-none min-h-[120px] text-lg outline-none placeholder:text-muted-foreground/50" 
-          placeholder="How are you feeling today? What did you eat?"
-        />
-        <div className="flex justify-end mt-4">
-          <button 
-            onClick={handleSave}
-            disabled={saving || !content.trim()}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save Entry
-          </button>
-        </div>
+      <div>
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          Journal & Education
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          Log your journey, join challenges, and learn from SVH experts.
+        </p>
       </div>
 
-      {/* History */}
-      <h2 className="text-xl font-bold font-heading mb-6 flex items-center gap-2">
-        <BookOpen className="h-5 w-5 text-primary" />
-        Past Entries
-      </h2>
-      <div className="space-y-6">
-        {entries.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">No entries yet. Start writing above!</p>
-        ) : (
-          entries.map(entry => (
-            <div key={entry.id} className="bg-card border border-border rounded-2xl p-6 hover:shadow-premium transition-all">
-              <div className="text-sm text-primary font-semibold mb-3">
-                {new Date(entry.createdAt).toLocaleDateString("en-US", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+      {/* Grid Layout */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        
+        {/* LEFT COL: JOURNAL & CHALLENGES */}
+        <div className="flex flex-col gap-8 lg:col-span-2">
+          
+          {/* Active Challenge */}
+          <section className="rounded-3xl border border-primary/20 bg-primary/5 p-6 sm:p-8">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Trophy className="h-6 w-6 text-primary" />
+                <h2 className="font-heading text-xl font-bold text-foreground">21-Day Summer Shred</h2>
               </div>
-              <div className="whitespace-pre-wrap text-foreground/90 leading-relaxed">
-                {entry.content}
+              <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
+                Day 12
+              </span>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">
+              You are over halfway through! Today's challenge is to replace your afternoon snack with a Formula 1 Shake and hit 10,000 steps.
+            </p>
+            
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+                Mark as Completed
+              </button>
+              <button className="flex-1 rounded-xl border border-border bg-background py-3 text-sm font-semibold text-foreground hover:bg-muted">
+                View Leaderboard
+              </button>
+            </div>
+          </section>
+
+          {/* Daily Journal */}
+          <section className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="font-heading text-xl font-bold text-foreground">Daily Journal</h2>
+              <button className="flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
+                <Edit3 className="h-4 w-4" /> New Entry
+              </button>
+            </div>
+
+            <div className="space-y-4 border-l-2 border-muted pl-4">
+              <div className="relative">
+                <div className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-primary" />
+                <span className="text-xs font-bold text-primary">Today, 09:00 AM</span>
+                <p className="mt-1 text-sm text-foreground bg-muted/30 p-3 rounded-lg">
+                  Felt incredibly energetic during the morning workout. The Afresh drink is definitely making a difference before cardio.
+                </p>
+              </div>
+              <div className="relative opacity-60">
+                <div className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-muted-foreground" />
+                <span className="text-xs font-bold text-muted-foreground">Yesterday, 10:00 PM</span>
+                <p className="mt-1 text-sm text-foreground bg-muted/30 p-3 rounded-lg">
+                  Missed my protein goal by a few grams today. Need to prep better for tomorrow's lunch.
+                </p>
               </div>
             </div>
-          ))
-        )}
+          </section>
+        </div>
+
+        {/* RIGHT COL: EDUCATION (SVH ACADEMY) */}
+        <div className="flex flex-col gap-6">
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="mb-6 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-emerald-500" />
+              <h2 className="font-heading text-xl font-bold text-foreground">SVH Academy</h2>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {/* Video Card 1 */}
+              <div className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-black">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
+                <div className="h-32 w-full bg-[url('https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=600&auto=format&fit=crop')] bg-cover bg-center opacity-60 transition-transform duration-500 group-hover:scale-110" />
+                <div className="absolute bottom-0 left-0 right-0 z-20 p-4">
+                  <PlayCircle className="mb-2 h-6 w-6 text-white" />
+                  <h3 className="font-heading text-sm font-bold text-white">Mastering Macros</h3>
+                  <p className="text-xs text-zinc-300">Learn how to balance your plate.</p>
+                </div>
+              </div>
+
+              {/* Video Card 2 */}
+              <div className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-black">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
+                <div className="h-32 w-full bg-[url('https://images.unsplash.com/photo-1594882645126-14020914d58d?q=80&w=600&auto=format&fit=crop')] bg-cover bg-center opacity-60 transition-transform duration-500 group-hover:scale-110" />
+                <div className="absolute bottom-0 left-0 right-0 z-20 p-4">
+                  <PlayCircle className="mb-2 h-6 w-6 text-white" />
+                  <h3 className="font-heading text-sm font-bold text-white">The Power of Protein</h3>
+                  <p className="text-xs text-zinc-300">Why muscle mass matters.</p>
+                </div>
+              </div>
+
+              {/* Locked Module */}
+              <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/50 p-4 text-center">
+                <Lock className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                <h3 className="font-heading text-sm font-bold text-muted-foreground">Advanced Metabolism</h3>
+                <p className="text-xs text-muted-foreground">Unlocks at Wellness Score 85</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

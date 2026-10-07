@@ -1,12 +1,18 @@
-import type { Metadata } from "next";
-import { requireAssociate } from "@/lib/auth-helpers";
+import { AssociateSidebar } from "@/components/associate/AssociateSidebar";
 
-export const metadata: Metadata = {
-  title: "Associate Dashboard",
-  description: "Manage your customers and business network.",
-};
-
-export default async function AssociateLayout({ children }: { children: React.ReactNode }) {
-  await requireAssociate();
-  return children;
+export default function AssociateLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-screen bg-background">
+      <AssociateSidebar />
+      <main className="ml-64 flex-1">
+        <div className="mx-auto max-w-6xl p-8">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
 }

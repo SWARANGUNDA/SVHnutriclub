@@ -1,159 +1,175 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Sparkles, UtensilsCrossed, Plus, Search, Loader2, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { useState } from "react";
 import { motion } from "framer-motion";
-
-interface NutritionLog {
-  id: string;
-  mealType: string;
-  foodName: string;
-  calories: number | null;
-  protein: number | null;
-  carbs: number | null;
-  fats: number | null;
-  date: string;
-}
+import { Camera, Flame, CheckCircle2, Apple, ChevronRight, Plus } from "lucide-react";
+import Link from "next/link";
 
 export default function NutritionPage() {
-  const [logs, setLogs] = useState<NutritionLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showManualLog, setShowManualLog] = useState(false);
-  const [newLog, setNewLog] = useState({ mealType: "BREAKFAST", foodName: "", calories: "", protein: "", carbs: "", fats: "" });
-
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
-  async function fetchLogs() {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/nutrition");
-      const data = await res.json();
-      if (data.logs) setLogs(data.logs);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleAddLog(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      const res = await fetch("/api/nutrition", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newLog),
-      });
-      if (res.ok) {
-        setShowManualLog(false);
-        setNewLog({ mealType: "BREAKFAST", foodName: "", calories: "", protein: "", carbs: "", fats: "" });
-        fetchLogs();
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  async function handleDelete(id: string) {
-    try {
-      await fetch(`/api/nutrition/${id}`, { method: "DELETE" });
-      fetchLogs();
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  const totalCalories = logs.reduce((sum, log) => sum + (log.calories || 0), 0);
-  const totalProtein = logs.reduce((sum, log) => sum + (log.protein || 0), 0);
+  const [activeDay, setActiveDay] = useState("Today");
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <section className="relative overflow-hidden bg-gradient-hero py-10">
-        <div className="bg-grid pointer-events-none absolute inset-0 opacity-30" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">Intake</span>
+    <div className="flex flex-col gap-8 lg:flex-row">
+      
+      {/* LEFT COL: MEAL TIMELINE */}
+      <div className="flex-1 space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">AI Meal Plan</h1>
+            <p className="mt-1 text-muted-foreground">Optimized for 15% Body Fat target.</p>
           </div>
-          <h1 className="mt-2 font-heading text-3xl font-bold text-foreground">Nutrition Diary</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Log your meals and track your macros.</p>
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 mt-8 space-y-6">
-        <div className="flex gap-4">
-          <Link href="/dashboard/scanner" className="flex-1 glass rounded-2xl p-6 text-center hover:ring-1 hover:ring-primary/50 transition-all group">
-            <Search className="h-8 w-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-heading font-bold text-foreground">AI Food Scanner</h3>
-            <p className="text-xs text-muted-foreground mt-1">Scan a photo to log instantly</p>
+          <Link 
+            href="/dashboard/nutrition/scan"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-105"
+          >
+            <Camera className="h-4 w-4" />
+            Scan Meal
           </Link>
-          <div onClick={() => setShowManualLog(!showManualLog)} className="flex-1 glass rounded-2xl p-6 text-center cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all group">
-            <Plus className="h-8 w-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-heading font-bold text-foreground">Manual Log</h3>
-            <p className="text-xs text-muted-foreground mt-1">Search food database</p>
+        </div>
+
+        {/* Days Scroll */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {["Yesterday", "Today", "Tomorrow", "Thursday", "Friday"].map((day) => (
+            <button
+              key={day}
+              onClick={() => setActiveDay(day)}
+              className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
+                activeDay === day 
+                  ? "bg-foreground text-background" 
+                  : "bg-muted text-muted-foreground hover:bg-border"
+              }`}
+            >
+              {day}
+            </button>
+          ))}
+        </div>
+
+        {/* Meals List */}
+        <div className="flex flex-col gap-4">
+          <MealCard 
+            meal="Breakfast" 
+            time="08:00 AM" 
+            title="Formula 1 + Protein Powder" 
+            cals={220} protein={24} carbs={18} fats={3} 
+            completed={true}
+            isHerbalife={true}
+          />
+          <MealCard 
+            meal="Mid-Morning" 
+            time="11:00 AM" 
+            title="Afresh Energy Drink + Almonds" 
+            cals={120} protein={4} carbs={5} fats={9} 
+            completed={true}
+            isHerbalife={true}
+          />
+          <MealCard 
+            meal="Lunch" 
+            time="01:30 PM" 
+            title="Grilled Paneer & Quinoa Bowl" 
+            cals={450} protein={28} carbs={45} fats={15} 
+            completed={false}
+          />
+          <MealCard 
+            meal="Evening" 
+            time="05:00 PM" 
+            title="Formula 1 Nutritional Shake" 
+            cals={200} protein={20} carbs={15} fats={2} 
+            completed={false}
+            isHerbalife={true}
+          />
+          <MealCard 
+            meal="Dinner" 
+            time="08:30 PM" 
+            title="Light Tofu Salad" 
+            cals={250} protein={18} carbs={12} fats={10} 
+            completed={false}
+          />
+        </div>
+      </div>
+
+      {/* RIGHT COL: MACROS SUMMARY */}
+      <div className="flex flex-col gap-6 lg:w-96 shrink-0">
+        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="font-heading text-lg font-bold text-foreground">Daily Macros</h2>
+          
+          <div className="mt-8 flex flex-col items-center justify-center">
+            {/* Simple CSS Donut representation */}
+            <div className="relative flex h-48 w-48 items-center justify-center rounded-full border-[16px] border-muted">
+              <div className="absolute inset-[-16px] rounded-full border-[16px] border-primary" style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 50%)" }} />
+              <div className="absolute inset-[-16px] rounded-full border-[16px] border-emerald-500" style={{ clipPath: "polygon(100% 100%, 100% 50%, 50% 50%, 0 50%)" }} />
+              <div className="absolute inset-[-16px] rounded-full border-[16px] border-orange-500" style={{ clipPath: "polygon(0 50%, 50% 50%, 0 100%)" }} />
+              
+              <div className="flex flex-col items-center">
+                <span className="font-heading text-3xl font-bold text-foreground">1,240</span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Kcal Eaten</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col gap-4">
+            <MacroBar label="Protein" current={56} total={120} color="bg-primary" />
+            <MacroBar label="Carbs" current={68} total={150} color="bg-emerald-500" />
+            <MacroBar label="Fats" current={27} total={50} color="bg-orange-500" />
           </div>
         </div>
 
-        {showManualLog && (
-          <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} onSubmit={handleAddLog} className="glass rounded-2xl p-6 border border-border">
-            <h3 className="font-bold mb-4">Add Nutrition Log</h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="text-xs text-muted-foreground">Meal Type</label>
-                <select value={newLog.mealType} onChange={e => setNewLog({...newLog, mealType: e.target.value})} className="w-full bg-background rounded-lg border border-border px-3 py-2 text-sm">
-                  <option>BREAKFAST</option><option>LUNCH</option><option>DINNER</option><option>SNACK</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Food Name</label>
-                <input required placeholder="e.g. Grilled Chicken" value={newLog.foodName} onChange={e => setNewLog({...newLog, foodName: e.target.value})} className="w-full bg-background rounded-lg border border-border px-3 py-2 text-sm" />
-              </div>
-              <div><label className="text-xs text-muted-foreground">Calories (kcal)</label><input type="number" value={newLog.calories} onChange={e => setNewLog({...newLog, calories: e.target.value})} className="w-full bg-background rounded-lg border border-border px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Protein (g)</label><input type="number" step="0.1" value={newLog.protein} onChange={e => setNewLog({...newLog, protein: e.target.value})} className="w-full bg-background rounded-lg border border-border px-3 py-2 text-sm" /></div>
-            </div>
-            <button type="submit" className="w-full bg-primary text-primary-foreground py-2 rounded-lg font-bold">Save Log</button>
-          </motion.form>
-        )}
+        <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6">
+          <h3 className="font-heading font-bold text-foreground">AI Suggestion</h3>
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+            You are falling slightly behind on protein today. Add 1 extra scoop of Personalized Protein Powder to your evening shake to hit your macro goal.
+          </p>
+        </div>
+      </div>
 
-        {loading ? (
-          <div className="flex justify-center p-10"><Loader2 className="animate-spin text-primary h-8 w-8" /></div>
-        ) : logs.length === 0 ? (
-          <div className="glass glow-green rounded-3xl p-8 border border-border text-center">
-            <UtensilsCrossed className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-            <h3 className="font-heading text-lg font-bold text-foreground mb-1">No Meals Logged Today</h3>
-            <p className="text-muted-foreground text-sm">Add your first meal to see your daily macro breakdown.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="glass rounded-2xl p-4 flex justify-between items-center bg-primary/10 border-primary/20">
-              <span className="font-bold">Today's Summary</span>
-              <div className="flex gap-4 text-sm">
-                <span><strong className="text-emerald-500">{totalCalories}</strong> kcal</span>
-                <span><strong className="text-primary">{totalProtein}g</strong> Protein</span>
-              </div>
+    </div>
+  );
+}
+
+// Helper Components
+function MealCard({ meal, time, title, cals, protein, carbs, fats, completed, isHerbalife }: any) {
+  return (
+    <div className={`relative flex flex-col gap-4 rounded-2xl border ${completed ? 'border-border/50 bg-card/50' : 'border-border bg-card'} p-5 transition-colors hover:border-primary/50`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{meal}</span>
+          <span className="text-xs font-medium text-muted-foreground">• {time}</span>
+        </div>
+        {completed && <CheckCircle2 className="h-5 w-5 text-primary" />}
+      </div>
+      
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {isHerbalife && (
+            <div className="flex h-6 items-center justify-center rounded bg-emerald-500/10 px-2 text-[10px] font-bold text-emerald-500">
+              SVH Pick
             </div>
-            {logs.map((log) => (
-              <div key={log.id} className="glass rounded-xl p-4 flex justify-between items-center border border-border/50">
-                <div>
-                  <div className="text-xs text-primary font-bold mb-1">{log.mealType}</div>
-                  <div className="font-bold text-foreground">{log.foodName}</div>
-                  <div className="text-xs text-muted-foreground flex gap-3 mt-1">
-                    <span>{log.calories || 0} kcal</span>
-                    <span>{log.protein || 0}g protein</span>
-                    <span>{log.carbs || 0}g carbs</span>
-                    <span>{log.fats || 0}g fat</span>
-                  </div>
-                </div>
-                <button onClick={() => handleDelete(log.id)} className="text-muted-foreground hover:text-red-500 p-2">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+          )}
+          <h3 className={`font-heading text-lg font-semibold ${completed ? 'text-foreground/70 line-through' : 'text-foreground'}`}>
+            {title}
+          </h3>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
+        <span className="flex items-center gap-1 text-orange-500"><Flame className="h-4 w-4"/> {cals} kcal</span>
+        <span className="text-muted-foreground">Pro: {protein}g</span>
+        <span className="text-muted-foreground">Carb: {carbs}g</span>
+        <span className="text-muted-foreground">Fat: {fats}g</span>
+      </div>
+    </div>
+  );
+}
+
+function MacroBar({ label, current, total, color }: any) {
+  const percentage = Math.min(100, (current / total) * 100);
+  return (
+    <div>
+      <div className="mb-1 flex justify-between text-sm">
+        <span className="font-semibold text-foreground">{label}</span>
+        <span className="text-muted-foreground">{current}g / {total}g</span>
+      </div>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className={`h-full ${color}`} style={{ width: `${percentage}%` }} />
       </div>
     </div>
   );

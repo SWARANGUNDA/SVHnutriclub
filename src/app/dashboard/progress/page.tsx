@@ -1,206 +1,160 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, TrendingUp, TrendingDown, Minus, Sparkles, Scale, Activity, Flame, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-interface ProgressEntry {
-  id: string;
-  measuredAt: string;
-  weight: number;
-  bmi: number;
-  bodyFat: number;
-  muscleMass: number;
-  notes: string | null;
-}
+import { Calendar, ChevronRight, Activity, ScanLine, Layers, TrendingDown } from "lucide-react";
+import { Body3DViewer } from "@/components/dashboard/Body3DViewer";
 
-function getTrend(current: number, previous: number): "up" | "down" | "same" {
-  const diff = current - previous;
-  if (Math.abs(diff) < 0.1) return "same";
-  return diff > 0 ? "up" : "down";
-}
+// Mock historical data
+const TIMELINE_DATA = [
+  {
+    id: "t1",
+    date: "Jan 1, 2026",
+    label: "START",
+    metrics: { weight: 82, bodyFat: 26.5, muscleMass: 52.1, visceralFat: 9 },
+    notes: "Initial consultation. Goal set to reduce body fat.",
+  },
+  {
+    id: "t2",
+    date: "Feb 15, 2026",
+    label: "WEEK 6",
+    metrics: { weight: 78.5, bodyFat: 23.2, muscleMass: 53.0, visceralFat: 8 },
+    notes: "Consistent with meal plan. Hydration improved.",
+  },
+  {
+    id: "t3",
+    date: "Mar 30, 2026",
+    label: "WEEK 12",
+    metrics: { weight: 75.2, bodyFat: 20.8, muscleMass: 54.5, visceralFat: 7 },
+    notes: "Added strength training. Muscle mass increasing.",
+  },
+  {
+    id: "t4",
+    date: "Today",
+    label: "CURRENT",
+    metrics: { weight: 72.5, bodyFat: 18.5, muscleMass: 55.2, visceralFat: 6 },
+    notes: "Excellent progress. Visceral fat in very healthy range.",
+  },
+];
 
 export default function ProgressPage() {
-  const [progressData, setProgressData] = useState<ProgressEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch("/api/body-metrics?history=true");
-        const data = await res.json();
-        if (data.metrics) {
-          setProgressData(data.metrics);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const latest = progressData[0];
-  const oldest = progressData[progressData.length - 1];
+  const [selectedIndex, setSelectedIndex] = useState(TIMELINE_DATA.length - 1);
+  const [showVisceral, setShowVisceral] = useState(false);
   
-  let weightChange = "0.0";
-  let fatChange = "0.0";
-  let muscleChange = "0.0";
-
-  if (latest && oldest && progressData.length > 1) {
-    weightChange = (latest.weight - oldest.weight).toFixed(1);
-    fatChange = (latest.bodyFat - oldest.bodyFat).toFixed(1);
-    muscleChange = (latest.muscleMass - oldest.muscleMass).toFixed(1);
-  }
-
-  // Reverse progress data so chronological order is left to right for charts
-  const chartData = [...progressData].reverse().map(d => ({
-    ...d,
-    date: new Date(d.measuredAt || new Date()).toLocaleDateString("en-IN", { month: "short", day: "numeric" })
-  }));
+  const currentEntry = TIMELINE_DATA[selectedIndex];
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <section className="relative overflow-hidden bg-gradient-hero py-10">
-        <div className="bg-grid pointer-events-none absolute inset-0 opacity-30" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">Body Progress</span>
+    <div className="flex flex-col gap-6 lg:h-[calc(100vh-10rem)] lg:flex-row">
+      
+      {/* LEFT PANE: 3D VIEWER */}
+      <div className="flex flex-col rounded-3xl border border-border bg-card shadow-sm lg:w-3/5">
+        <div className="flex items-center justify-between border-b border-border p-6">
+          <div>
+            <h2 className="font-heading text-xl font-bold text-foreground">Body Visualization</h2>
+            <p className="text-sm text-muted-foreground">Reacts to your historical metrics</p>
           </div>
-          <h1 className="mt-2 font-heading text-3xl font-bold text-foreground">Your Transformation Timeline</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Track your body changes and milestones over time</p>
+          
+          <button
+            onClick={() => setShowVisceral(!showVisceral)}
+            className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+              showVisceral 
+                ? "border-destructive/50 bg-destructive/10 text-destructive" 
+                : "border-border bg-background text-muted-foreground hover:border-primary hover:text-primary"
+            }`}
+          >
+            <Layers className="h-4 w-4" />
+            X-Ray Mode
+          </button>
         </div>
-      </section>
-
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
-        {/* Summary Cards */}
-        {progressData.length > 1 && (
-          <div className="grid gap-3 grid-cols-3">
-            {[
-              { label: "Weight Change", value: `${parseFloat(weightChange) <= 0 ? "" : "+"}${weightChange} kg`, icon: Scale, good: parseFloat(weightChange) <= 0 },
-              { label: "Body Fat Change", value: `${parseFloat(fatChange) <= 0 ? "" : "+"}${fatChange}%`, icon: Flame, good: parseFloat(fatChange) <= 0 },
-              { label: "Muscle Change", value: `${parseFloat(muscleChange) >= 0 ? "+" : ""}${muscleChange}%`, icon: Activity, good: parseFloat(muscleChange) >= 0 },
-            ].map((stat, i) => (
-              <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="glass rounded-xl p-4 text-center">
-                <stat.icon className={cn("mx-auto h-6 w-6", stat.good ? "text-emerald-500" : "text-amber-500")} />
-                <p className={cn("mt-1 font-heading text-xl font-bold", stat.good ? "text-emerald-500" : "text-amber-500")}>{stat.value}</p>
-                <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        {/* Charts */}
-        {chartData.length > 1 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass rounded-3xl p-6">
-            <h2 className="mb-6 font-heading text-lg font-bold text-foreground">Body Metrics Trend</h2>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                  <XAxis dataKey="date" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px' }}
-                    itemStyle={{ color: '#fff' }}
-                  />
-                  <Line type="monotone" name="Weight (kg)" dataKey="weight" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 6 }} />
-                  <Line type="monotone" name="Body Fat (%)" dataKey="bodyFat" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#f59e0b' }} />
-                </LineChart>
-              </ResponsiveContainer>
+        
+        <div className="relative flex-1 p-4">
+          <Body3DViewer 
+            bodyFat={currentEntry.metrics.bodyFat}
+            muscleMass={currentEntry.metrics.muscleMass}
+            visceralFat={currentEntry.metrics.visceralFat}
+            showVisceral={showVisceral}
+          />
+        </div>
+        
+        <div className="border-t border-border bg-muted/20 p-6">
+          <div className="grid grid-cols-4 gap-4 text-center">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Weight</div>
+              <div className="mt-1 font-heading text-xl font-bold text-foreground">{currentEntry.metrics.weight} <span className="text-sm font-normal text-muted-foreground">kg</span></div>
             </div>
-          </motion.div>
-        )}
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Body Fat</div>
+              <div className="mt-1 font-heading text-xl font-bold text-foreground">{currentEntry.metrics.bodyFat} <span className="text-sm font-normal text-muted-foreground">%</span></div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Muscle</div>
+              <div className="mt-1 font-heading text-xl font-bold text-foreground">{currentEntry.metrics.muscleMass} <span className="text-sm font-normal text-muted-foreground">kg</span></div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Visceral</div>
+              <div className="mt-1 font-heading text-xl font-bold text-foreground">{currentEntry.metrics.visceralFat}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {/* Timeline */}
-        <div className="relative">
-          {progressData.length > 0 && <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />}
+      {/* RIGHT PANE: TIMELINE */}
+      <div className="flex flex-col gap-6 lg:w-2/5">
+        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <div className="mb-8">
+            <h2 className="font-heading text-xl font-bold text-foreground">Transformation Timeline</h2>
+            <p className="text-sm text-muted-foreground">Select a milestone to view body changes</p>
+          </div>
 
-          <div className="space-y-6">
-            {progressData.length === 0 ? (
-              <p className="text-center text-muted-foreground py-10">No progress data logged yet. Add your first metrics on the Dashboard!</p>
-            ) : (
-              progressData.map((entry, i) => {
-                const prev = progressData[i + 1];
-                const weightTrend = prev ? getTrend(entry.weight, prev.weight) : "same";
-                const isLatest = i === 0;
-
-                return (
-                  <motion.div
-                    key={entry.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="relative pl-16"
+          <div className="relative border-l-2 border-muted pl-6 pb-4">
+            {TIMELINE_DATA.map((entry, idx) => {
+              const isSelected = selectedIndex === idx;
+              return (
+                <div key={entry.id} className="relative mb-10 last:mb-0">
+                  {/* Timeline Node */}
+                  <div 
+                    className={`absolute -left-[35px] top-1 flex h-6 w-6 items-center justify-center rounded-full border-4 border-card transition-colors ${
+                      isSelected ? "bg-primary" : "bg-muted"
+                    }`}
+                  />
+                  
+                  <button 
+                    onClick={() => setSelectedIndex(idx)}
+                    className={`flex w-full flex-col items-start text-left transition-opacity ${isSelected ? "opacity-100" : "opacity-50 hover:opacity-100"}`}
                   >
-                    {/* Timeline dot */}
-                    <div className={cn(
-                      "absolute left-4 top-4 flex h-5 w-5 items-center justify-center rounded-full border-2",
-                      isLatest ? "border-primary bg-primary" : "border-border bg-background"
-                    )}>
-                      {isLatest && <Sparkles className="h-2.5 w-2.5 text-white" />}
+                    <div className="flex w-full items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-primary">{entry.label}</span>
+                      <span className="text-xs font-medium text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3"/> {entry.date}</span>
                     </div>
-
-                    <div className={cn("glass rounded-2xl p-5", isLatest && "ring-1 ring-primary/20")}>
-                      {/* Milestone badge */}
-                      {isLatest && (
-                        <div className="mb-3 inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                          Latest Entry
+                    
+                    <div className={`mt-2 w-full rounded-xl border p-4 transition-colors ${isSelected ? "border-primary/50 bg-primary/5" : "border-border bg-background"}`}>
+                      <p className="text-sm text-foreground">{entry.notes}</p>
+                      {idx > 0 && (
+                        <div className="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-500">
+                          <TrendingDown className="h-3 w-3" />
+                          Body fat -{(TIMELINE_DATA[idx-1].metrics.bodyFat - entry.metrics.bodyFat).toFixed(1)}% since last scan
                         </div>
                       )}
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(entry.measuredAt || new Date()).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {weightTrend === "down" && <TrendingDown className="h-3.5 w-3.5 text-emerald-500" />}
-                          {weightTrend === "up" && <TrendingUp className="h-3.5 w-3.5 text-amber-500" />}
-                          {weightTrend === "same" && <Minus className="h-3.5 w-3.5 text-muted-foreground" />}
-                        </div>
-                      </div>
-
-                      {/* Metrics row */}
-                      <div className="mt-3 grid grid-cols-4 gap-3">
-                        {[
-                          { label: "Weight", value: `${entry.weight || 0} kg` },
-                          { label: "BMI", value: entry.bmi?.toFixed(1) || "0" },
-                          { label: "Body Fat", value: `${entry.bodyFat || 0}%` },
-                          { label: "Muscle", value: `${entry.muscleMass || 0}%` },
-                        ].map((m) => (
-                          <div key={m.label} className="text-center">
-                            <p className="font-heading text-sm font-bold text-foreground">{m.value}</p>
-                            <p className="text-[10px] text-muted-foreground">{m.label}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      {entry.notes && (
-                        <p className="mt-3 text-xs text-muted-foreground italic">📝 {entry.notes}</p>
-                      )}
                     </div>
-                  </motion.div>
-                );
-              })
-            )}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">← Back to Dashboard</Link>
+        {/* AI Insight Card */}
+        <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-6">
+          <div className="mb-2 flex items-center gap-2">
+            <ScanLine className="h-5 w-5 text-primary" />
+            <h3 className="font-heading font-bold text-foreground">SVH Progress AI</h3>
+          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Based on your timeline trajectory, you are on track to hit your 15% body fat goal by mid-June. Your muscle preservation during weight loss has been highly effective.
+          </p>
+        </div>
       </div>
+
     </div>
   );
 }

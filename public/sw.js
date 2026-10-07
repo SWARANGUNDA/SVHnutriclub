@@ -1,90 +1,62 @@
-/// <reference lib="webworker" />
+const CACHE_NAME = 'svh-wellness-cache-v1';
 
-const CACHE_NAME = "svh-v1";
-const OFFLINE_URL = "/offline";
-
-const PRECACHE_URLS = [
-  "/",
-  "/products",
-  "/about",
-  "/blog",
-  "/services",
-  "/contact",
-  "/manifest.json",
-];
-
-self.addEventListener("install", (event) => {
-  const e = event as ExtendableEvent;
-  e.waitUntil(
+self.addEventListener('install', (event) => {
+  console.log('[SVH Service Worker] Installing...');
+  event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_URLS);
+      // Pre-cache core assets for faster load times
+      return cache.addAll([
+        '/',
+        '/login',
+        '/dashboard',
+        '/manifest.json'
+      ]);
     })
   );
-  (self as unknown as ServiceWorkerGlobalScope).skipWaiting();
+  self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
-  const e = event as ExtendableEvent;
-  e.waitUntil(
+self.addEventListener('activate', (event) => {
+  console.log('[SVH Service Worker] Activated.');
+  // Clean up old caches
+  event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('[SVH Service Worker] Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
       );
     })
   );
-  (self as unknown as ServiceWorkerGlobalScope).clients.claim();
+  self.clients.claim();
 });
 
-self.addEventListener("fetch", (event) => {
-  const e = event as FetchEvent;
-  const { request } = e;
-
-  // Skip non-GET requests
-  if (request.method !== "GET") return;
-
-  // Skip API routes and auth routes
-  if (request.url.includes("/api/")) return;
-
-  // Network-first strategy for pages
-  if (request.mode === "navigate") {
-    e.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cache successful navigation responses
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, clone);
-          });
-          return response;
-        })
-        .catch(() => {
-          // Try cache fallback
-          return caches.match(request).then((cached) => {
-            return cached || caches.match(OFFLINE_URL) || new Response("Offline", { status: 503 });
-          });
-        })
-    );
-    return;
-  }
-
-  // Cache-first for static assets
-  if (
-    request.url.match(/\.(js|css|png|jpg|jpeg|webp|svg|woff2|ico)$/)
-  ) {
-    e.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, clone);
-          });
-          return response;
-        });
+self.addEventListener('fetch', (event) => {
+  // Stale-while-revalidate strategy for navigation requests
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match(event.request);
       })
     );
     return;
   }
+
+  // Network-first strategy for API calls
+  if (event.request.url.includes('/api/')) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Cache-first strategy for static assets (images, fonts)
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
+  );
 });

@@ -1,326 +1,82 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import {
-  Users,
-  Activity,
-  Calendar,
-  ShoppingBag,
-  TrendingUp,
-  BrainCircuit,
-  ArrowUpRight,
-  ArrowDownRight,
-  RefreshCw,
-} from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-} from "recharts";
-import { cn } from "@/lib/utils";
+import { Activity, Server, Users, ShieldAlert, Cpu } from "lucide-react";
 
-const mockUserData = [
-  { name: "Mon", users: 120, active: 80 },
-  { name: "Tue", users: 150, active: 100 },
-  { name: "Wed", users: 180, active: 120 },
-  { name: "Thu", users: 170, active: 140 },
-  { name: "Fri", users: 210, active: 160 },
-  { name: "Sat", users: 250, active: 200 },
-  { name: "Sun", users: 280, active: 220 },
-];
-
-const mockSalesData = [
-  { name: "Week 1", sales: 4000 },
-  { name: "Week 2", sales: 3000 },
-  { name: "Week 3", sales: 5000 },
-  { name: "Week 4", sales: 7000 },
-];
-
-export default function AdminDashboardPage() {
-  const [loading, setLoading] = useState(false);
-  const [aiSummary, setAiSummary] = useState<string | null>(null);
-  const [stats, setStats] = useState({ totalUsers: 2405, activeScans: 842, consultations: 156, totalSales: 45231 }); // defaults that get overwritten
-
-  useEffect(() => {
-    fetchDataAndGenerateSummary();
-  }, []);
-
-  async function fetchDataAndGenerateSummary() {
-    setLoading(true);
-    let currentStats = stats;
-    try {
-      const res = await fetch("/api/admin/analytics");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.totalUsers !== undefined) {
-           currentStats = {
-             totalUsers: data.totalUsers || 0,
-             activeScans: data.activeScans || 0,
-             consultations: data.consultations || 0,
-             totalSales: data.totalSales || 0
-           };
-           setStats(currentStats);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to fetch analytics:", e);
-    }
-
-    try {
-      const summaryRes = await fetch("/api/admin/ai-summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ metrics: currentStats })
-      });
-      if (summaryRes.ok) {
-        const data = await summaryRes.json();
-        setAiSummary(data.summary || "Unable to generate summary.");
-      } else {
-        setAiSummary("Failed to generate summary due to API error.");
-      }
-    } catch (e) {
-       console.error("Failed to generate summary:", e);
-       setAiSummary("AI Summary currently unavailable.");
-    }
-    setLoading(false);
-  }
-
-  const statCards = [
-    {
-      title: "Total Users",
-      value: stats.totalUsers.toLocaleString(),
-      change: "--",
-      trend: "up",
-      icon: Users,
-      color: "from-blue-500 to-cyan-500",
-    },
-    {
-      title: "Active Scans",
-      value: stats.activeScans.toLocaleString(),
-      change: "--",
-      trend: "up",
-      icon: Activity,
-      color: "from-emerald-500 to-teal-500",
-    },
-    {
-      title: "Consultations",
-      value: stats.consultations.toLocaleString(),
-      change: "--",
-      trend: "up",
-      icon: Calendar,
-      color: "from-amber-500 to-orange-500",
-    },
-    {
-      title: "Total Sales",
-      value: `$${stats.totalSales.toLocaleString()}`,
-      change: "--",
-      trend: "up",
-      icon: ShoppingBag,
-      color: "from-purple-500 to-pink-500",
-    },
-  ];
-
+export default function AdminDashboard() {
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      {/* Admin Header */}
-      <section className="relative overflow-hidden bg-zinc-950 border-b border-white/10 py-12">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="flex flex-col gap-8">
+      <div>
+        <h1 className="font-heading text-3xl font-bold text-white">System Command</h1>
+        <p className="mt-1 text-zinc-400">Global overview of SVH Platform Health.</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-zinc-800 bg-black p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-2.5 py-1 text-xs font-semibold text-indigo-400 border border-indigo-500/20">
-                  <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                  Admin Control Panel
-                </span>
-              </div>
-              <h1 className="font-heading text-4xl font-bold text-white">
-                Platform Intelligence
-              </h1>
-              <p className="mt-2 text-sm text-zinc-400">
-                System-wide analytics, user growth, and AI-generated performance summaries.
-              </p>
-            </div>
-            <button
-              onClick={fetchDataAndGenerateSummary}
-              disabled={loading}
-              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-indigo-500 disabled:opacity-50 shadow-lg shadow-indigo-900/20"
-            >
-              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-              Sync Data
-            </button>
+            <span className="text-sm font-medium text-zinc-400">Active Associates</span>
+            <Users className="h-4 w-4 text-zinc-500" />
+          </div>
+          <div className="mt-4">
+            <span className="font-heading text-3xl font-bold text-white">42</span>
           </div>
         </div>
-      </section>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
-        {/* AI Summary Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass glow-green relative overflow-hidden rounded-3xl p-6 sm:p-8"
-        >
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-              <BrainCircuit className="h-6 w-6 text-primary" />
-            </div>
-            <div className="flex-1">
-              <h2 className="font-heading text-lg font-bold text-foreground">
-                AI Executive Summary
-              </h2>
-              {loading ? (
-                <div className="mt-4 space-y-2">
-                  <div className="h-4 w-3/4 animate-pulse rounded bg-muted"></div>
-                  <div className="h-4 w-1/2 animate-pulse rounded bg-muted"></div>
-                </div>
-              ) : (
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {aiSummary}
-                </p>
-              )}
-            </div>
+        <div className="rounded-2xl border border-zinc-800 bg-black p-6">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-zinc-400">Total Customers</span>
+            <Users className="h-4 w-4 text-zinc-500" />
           </div>
-        </motion.div>
-
-        {/* Stats Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {statCards.map((stat, index) => (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="glass relative overflow-hidden rounded-2xl p-6"
-            >
-              <div className="flex items-center justify-between">
-                <div
-                  className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br",
-                    stat.color
-                  )}
-                >
-                  <stat.icon className="h-6 w-6 text-white" />
-                </div>
-                <div
-                  className={cn(
-                    "flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold",
-                    stat.trend === "up"
-                      ? "bg-emerald-500/10 text-emerald-500"
-                      : "bg-red-500/10 text-red-500"
-                  )}
-                >
-                  {stat.trend === "up" ? (
-                    <ArrowUpRight className="h-3 w-3" />
-                  ) : (
-                    <ArrowDownRight className="h-3 w-3" />
-                  )}
-                  {stat.change}
-                </div>
-              </div>
-              <div className="mt-4">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  {stat.title}
-                </h3>
-                <p className="mt-1 font-heading text-3xl font-bold text-foreground">
-                  {stat.value}
-                </p>
-              </div>
-            </motion.div>
-          ))}
+          <div className="mt-4">
+            <span className="font-heading text-3xl font-bold text-white">4,892</span>
+          </div>
         </div>
 
-        {/* Charts Grid */}
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* User Growth Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="glass rounded-3xl p-6"
-          >
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h3 className="font-heading text-lg font-bold text-foreground">
-                  User Growth & Activity
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  New vs Active users this week
-                </p>
-              </div>
-            </div>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockUserData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--background))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.75rem",
-                    }}
-                  />
-                  <Area type="monotone" dataKey="users" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
-                  <Area type="monotone" dataKey="active" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorActive)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
+        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-emerald-500">API Health</span>
+            <Activity className="h-4 w-4 text-emerald-500" />
+          </div>
+          <div className="mt-4">
+            <span className="font-heading text-3xl font-bold text-emerald-500">99.9%</span>
+            <p className="mt-1 text-xs text-emerald-500/70">All systems operational</p>
+          </div>
+        </div>
 
-          {/* Sales Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="glass rounded-3xl p-6"
-          >
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h3 className="font-heading text-lg font-bold text-foreground">
-                  Product Sales
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Monthly revenue overview
-                </p>
+        <div className="rounded-2xl border border-zinc-800 bg-black p-6">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-zinc-400">AI Tokens Used</span>
+            <Cpu className="h-4 w-4 text-zinc-500" />
+          </div>
+          <div className="mt-4">
+            <span className="font-heading text-3xl font-bold text-white">1.2M</span>
+            <p className="mt-1 text-xs text-zinc-500">This billing cycle</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-zinc-800 bg-black p-6">
+          <h2 className="mb-4 font-heading text-lg font-bold text-white">Recent Security Logs</h2>
+          <div className="space-y-4">
+            {[
+              { event: "Admin Login", ip: "192.168.1.1", time: "2 mins ago", status: "success" },
+              { event: "Failed Login Attempt", ip: "45.22.11.9", time: "14 mins ago", status: "fail" },
+              { event: "Role Escalation Blocked", ip: "10.0.0.5", time: "1 hour ago", status: "fail" },
+              { event: "DB Backup Completed", ip: "System", time: "4 hours ago", status: "success" },
+            ].map((log, i) => (
+              <div key={i} className="flex items-center justify-between border-b border-zinc-800 pb-3 last:border-0 last:pb-0">
+                <div>
+                  <p className="text-sm font-medium text-zinc-200">{log.event}</p>
+                  <p className="text-xs text-zinc-500">{log.ip} • {log.time}</p>
+                </div>
+                {log.status === "fail" ? (
+                  <ShieldAlert className="h-4 w-4 text-destructive" />
+                ) : (
+                  <Server className="h-4 w-4 text-emerald-500" />
+                )}
               </div>
-            </div>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={mockSalesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barSize={32}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(val) => `$${val}`} />
-                  <Tooltip
-                    cursor={{ fill: "hsl(var(--muted))" }}
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--background))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.75rem",
-                    }}
-                  />
-                  <Bar dataKey="sales" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

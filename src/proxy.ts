@@ -1,48 +1,56 @@
+import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
 
-export async function proxy(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
-  const { pathname } = req.nextUrl;
+export default auth((req) => {
+  const { nextUrl } = req;
+  const isLoggedIn = !!req.auth;
+  const role = req.auth?.user?.role;
+  const path = nextUrl.pathname;
 
-  // Protect /admin routes
-  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
-    if (!token) {
-      return NextResponse.redirect(new URL("/admin/login", req.url));
+  // Define route rules
+  const isApiAuthRoute = path.startsWith("/api/auth");
+  const isCustomerRoute = path.startsWith("/dashboard");
+  const isAssociateRoute = path.startsWith("/associate") && path !== "/associate/login";
+  const isAdminRoute = path.startsWith("/admin") && path !== "/admin/login";
+  const isAuthRoute = path === "/login" || path === "/associate/login" || path === "/admin/login";
+
+  if (isApiAuthRoute) return NextResponse.next();
+
+  // If user is accessing login routes while logged in, redirect them to their respective portal
+  if (isAuthRoute) {
+    if (isLoggedIn) {
+      if (role === "ADMIN") return NextResponse.redirect(new URL("/admin", nextUrl));
+      if (role === "ASSOCIATE") return NextResponse.redirect(new URL("/associate", nextUrl));
+      if (role === "CUSTOMER") return NextResponse.redirect(new URL("/dashboard", nextUrl));
     }
-    if (token.role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/login", req.url)); // unauthorized role
-    }
+    return NextResponse.next();
   }
 
-  // Protect /associate routes
-  if (pathname.startsWith("/associate") && !pathname.startsWith("/associate/login")) {
-    if (!token) {
-      return NextResponse.redirect(new URL("/associate/login", req.url));
-    }
-    if (token.role !== "ASSOCIATE") {
-      return NextResponse.redirect(new URL("/login", req.url)); // unauthorized role
-    }
+  // Check auth requirements (Unauthenticated)
+  if (!isLoggedIn) {
+    if (isCustomerRoute) return NextResponse.redirect(new URL("/login", nextUrl));
+    if (isAssociateRoute) return NextResponse.redirect(new URL("/associate/login", nextUrl));
+    if (isAdminRoute) return NextResponse.redirect(new URL("/admin/login", nextUrl));
+    return NextResponse.next();
   }
 
-  // Protect /dashboard routes (CUSTOMER only)
-  if (pathname.startsWith("/dashboard")) {
-    if (!token) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-    if (token.role !== "CUSTOMER") {
-      // If admin/associate tries to access dashboard, send them to their respective portal
-      if (token.role === "ADMIN") return NextResponse.redirect(new URL("/admin", req.url));
-      if (token.role === "ASSOCIATE") return NextResponse.redirect(new URL("/associate", req.url));
-      
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
+  // RBAC checks (Authenticated)
+  if (isCustomerRoute && role !== "CUSTOMER") {
+    if (role === "ADMIN") return NextResponse.redirect(new URL("/admin", nextUrl));
+    if (role === "ASSOCIATE") return NextResponse.redirect(new URL("/associate", nextUrl));
+  }
+  
+  if (isAssociateRoute && role !== "ASSOCIATE") {
+    return NextResponse.redirect(new URL("/login", nextUrl));
+  }
+  
+  if (isAdminRoute && role !== "ADMIN") {
+    return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
-  matcher: ["/admin/:path*", "/associate/:path*", "/dashboard/:path*"],
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };

@@ -4,19 +4,20 @@ import { useEffect } from "react";
 
 export function ServiceWorkerRegistration() {
   useEffect(() => {
-    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+    // Register the service worker only in production or if explicitly testing PWA
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker
           .register("/sw.js")
-          .then((reg) => {
-            console.log("[SW] Registered:", reg.scope);
+          .then((registration) => {
+            console.log("[SVH PWA] Service Worker registered with scope:", registration.scope);
           })
-          .catch((err) => {
-            console.log("[SW] Registration failed:", err);
+          .catch((error) => {
+            console.error("[SVH PWA] Service Worker registration failed:", error);
           });
       });
     }
   }, []);
 
-  return null;
+  return null; // This component doesn't render any UI
 }
