@@ -199,7 +199,7 @@ export default async function CustomerDashboardPage() {
         {/* Next Best Action (5 cols) */}
         <div className="lg:col-span-5 rounded-[24px] border border-emerald-500/30 bg-emerald-500/5 p-6 backdrop-blur-xl relative overflow-hidden flex flex-col justify-between">
           <div className="absolute right-0 bottom-0 opacity-20 pointer-events-none">
-            <ScanBody className="h-40 w-40 text-emerald-500 translate-x-10 translate-y-10" />
+            <Scan className="h-40 w-40 text-emerald-500 translate-x-10 translate-y-10" />
           </div>
           
           <div className="relative z-10 flex items-center justify-between mb-4">
@@ -234,7 +234,7 @@ export default async function CustomerDashboardPage() {
         {/* Body Composition (4 cols) */}
         <div className="lg:col-span-4 rounded-[24px] border border-white/5 bg-white/5 p-6 backdrop-blur-xl dark:bg-black/40">
           <div className="flex items-center gap-2 mb-6">
-            <ScanBody className="h-5 w-5 text-primary" />
+            <Scan className="h-5 w-5 text-primary" />
             <h2 className="font-heading text-lg font-bold text-foreground">Your Body Composition</h2>
           </div>
           <div className="flex gap-4">

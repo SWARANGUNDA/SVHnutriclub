@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   ChevronLeft, ChevronRight, ArrowRight, 
-  ScanBody, Utensils, ScanLine, Bot, 
+  Scan, Utensils, ScanLine, Bot, 
   ShoppingBag, TrendingUp, FileText, Mic
 } from "lucide-react";
 
@@ -12,7 +12,7 @@ const AI_FEATURES = [
   {
     title: "Body Scan AI",
     desc: "Upload your scan. Get instant analysis",
-    icon: ScanBody,
+    icon: Scan,
     href: "/dashboard/scan",
     color: "from-emerald-500/20 to-transparent",
   },
