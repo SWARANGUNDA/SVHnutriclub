@@ -41,7 +41,7 @@ export default async function CustomerDashboardPage() {
 
     if (latestMetrics.length > 0) {
       const current = latestMetrics[0];
-      const previous = latestMetrics[1]; // might be undefined
+      const previous = latestMetrics[1]; 
 
       metrics.wellnessScore = Math.round(current.healthScore || 80);
       metrics.weight = current.weight || 61.5;
@@ -66,35 +66,39 @@ export default async function CustomerDashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-24 relative">
+    <div className="flex flex-col gap-5 pb-24 relative">
       
       {/* 1. HERO & TOP METRICS */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         
-        {/* Left Hero (spans 5 cols) */}
-        <div className="lg:col-span-5 relative overflow-hidden rounded-[24px] border border-white/5 bg-black/40 backdrop-blur-xl p-8 flex flex-col justify-between min-h-[220px]">
+        {/* Left Hero (spans 4 cols for a tighter layout) */}
+        <div className="lg:col-span-4 relative overflow-hidden rounded-[20px] border border-border bg-card p-6 flex flex-col justify-center min-h-[160px] shadow-sm backdrop-blur-md">
           {/* Subtle background image representing sunrise/wellness */}
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center opacity-30 mix-blend-screen" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent" />
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center opacity-40 dark:opacity-30 mix-blend-multiply dark:mix-blend-screen" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/20 dark:from-black/90 dark:via-black/70" />
           
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <Sun className="h-5 w-5 text-yellow-400" />
-              <span className="text-sm font-bold text-foreground">Good Morning, {userName} <span className="text-xl">👋</span></span>
+          <div className="relative z-10 flex flex-col h-full justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Sun className="h-4 w-4 text-yellow-400 drop-shadow-md" />
+                <span className="text-xs font-bold text-white drop-shadow-md">Good Morning, {userName} <span className="text-base">👋</span></span>
+              </div>
+              <p className="text-[10px] text-zinc-300 font-medium mb-3">{todayDate}</p>
             </div>
-            <p className="text-xs text-muted-foreground font-medium mb-6">{todayDate}</p>
             
-            <h1 className="font-heading text-2xl sm:text-3xl font-bold leading-tight text-white mb-2">
-              Here's what matters<br/>for your <span className="text-emerald-400">wellness today.</span>
-            </h1>
-            <p className="text-sm text-zinc-300 font-medium max-w-[80%]">
-              Stay consistent, make healthier choices, and let's build a better you together.
-            </p>
+            <div>
+              <h1 className="font-heading text-xl sm:text-2xl font-bold leading-tight text-white mb-1 drop-shadow-md">
+                Here's what matters<br/>for your <span className="text-emerald-400">wellness today.</span>
+              </h1>
+              <p className="text-[10px] text-zinc-300 font-medium leading-tight max-w-[90%]">
+                Stay consistent, make healthier choices, and let's build a better you together.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Right Metrics (spans 7 cols) */}
-        <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Right Metrics (spans 8 cols) */}
+        <div className="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-3">
           <MetricCard 
             title="Wellness Score" 
             value={metrics.wellnessScore} 
@@ -136,7 +140,7 @@ export default async function CustomerDashboardPage() {
       </section>
 
       {/* 2. SVH INTELLIGENCE (AI CAROUSEL) */}
-      <section className="mt-2">
+      <section className="mt-1">
         <AICarousel />
       </section>
 
@@ -144,15 +148,15 @@ export default async function CustomerDashboardPage() {
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         
         {/* Today at SVH (7 cols) */}
-        <div className="lg:col-span-7 rounded-[24px] border border-white/5 bg-white/5 p-6 backdrop-blur-xl dark:bg-black/40 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-6">
+        <div className="lg:col-span-7 rounded-[20px] border border-border bg-card p-5 shadow-sm backdrop-blur-md flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-emerald-400" />
-              <h2 className="font-heading text-lg font-bold text-foreground">Today at SVH</h2>
+              <Calendar className="h-4 w-4 text-emerald-500" />
+              <h2 className="font-heading text-base font-bold text-foreground">Today at SVH</h2>
             </div>
-            <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur-md">
-              <span className="text-xs font-medium text-foreground">Today, {todayDateShort}</span>
-              <div className="flex gap-1 border-l border-white/10 pl-2">
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-2 py-1">
+              <span className="text-[10px] font-bold text-foreground">Today, {todayDateShort}</span>
+              <div className="flex gap-1 border-l border-border pl-2">
                 <ChevronLeft className="h-3 w-3 text-muted-foreground" />
                 <ChevronRight className="h-3 w-3 text-muted-foreground" />
               </div>
@@ -160,68 +164,68 @@ export default async function CustomerDashboardPage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="flex flex-col gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 relative overflow-hidden">
-              <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-emerald-500/20 flex items-center justify-center"><Utensils className="h-3 w-3 text-emerald-500" /></div>
-                <span className="text-[10px] font-bold uppercase text-foreground">Club <span className="text-muted-foreground">Nutrition</span></span>
+            <div className="flex flex-col gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 relative overflow-hidden">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="h-5 w-5 rounded-md bg-emerald-500/20 flex items-center justify-center"><Utensils className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /></div>
+                <span className="text-[9px] font-bold uppercase text-foreground leading-tight">Club<br/><span className="text-muted-foreground">Nutrition</span></span>
               </div>
-              <p className="text-xs font-bold text-emerald-500 mt-1">Completed</p>
-              <p className="text-[10px] text-muted-foreground">1 / 2 shakes</p>
+              <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">Completed</p>
+              <p className="text-[9px] text-muted-foreground">1 / 2 shakes</p>
               <CheckCircle2 className="absolute bottom-2 right-2 h-4 w-4 text-emerald-500" />
             </div>
 
-            <div className="flex flex-col gap-2 rounded-xl border border-orange-500/30 bg-orange-500/5 p-3">
-              <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-orange-500/10 flex items-center justify-center"><Home className="h-3 w-3 text-orange-500" /></div>
-                <span className="text-[10px] font-bold uppercase text-foreground">Home <span className="text-muted-foreground">Nutrition</span></span>
+            <div className="flex flex-col gap-1.5 rounded-xl border border-orange-500/30 bg-orange-500/10 p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="h-5 w-5 rounded-md bg-orange-500/20 flex items-center justify-center"><Home className="h-3 w-3 text-orange-600 dark:text-orange-400" /></div>
+                <span className="text-[9px] font-bold uppercase text-foreground leading-tight">Home<br/><span className="text-muted-foreground">Nutrition</span></span>
               </div>
-              <p className="text-xs font-bold text-orange-500 mt-1">Not logged</p>
-              <p className="text-[10px] text-primary hover:underline cursor-pointer mt-auto">Log now</p>
+              <p className="text-[11px] font-bold text-orange-600 dark:text-orange-400">Not logged</p>
+              <p className="text-[9px] text-primary hover:underline cursor-pointer mt-auto">Log now</p>
             </div>
 
-            <div className="flex flex-col gap-2 rounded-xl border border-blue-500/30 bg-blue-500/5 p-3">
-              <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-blue-500/10 flex items-center justify-center"><Droplet className="h-3 w-3 text-blue-500" /></div>
-                <span className="text-[10px] font-bold uppercase text-muted-foreground">Water Intake</span>
+            <div className="flex flex-col gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="h-5 w-5 rounded-md bg-blue-500/20 flex items-center justify-center"><Droplet className="h-3 w-3 text-blue-600 dark:text-blue-400" /></div>
+                <span className="text-[9px] font-bold uppercase text-muted-foreground leading-tight">Water<br/>Intake</span>
               </div>
-              <p className="text-sm font-bold text-foreground mt-auto">1.2 <span className="text-[10px] text-muted-foreground">L / 2 L</span></p>
+              <p className="text-xs font-bold text-foreground mt-auto">1.2 <span className="text-[9px] text-muted-foreground">L / 2 L</span></p>
             </div>
 
-            <div className="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
-              <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center"><Activity className="h-3 w-3 text-primary" /></div>
-                <span className="text-[10px] font-bold uppercase text-muted-foreground">Activity</span>
+            <div className="flex flex-col gap-1.5 rounded-xl border border-primary/30 bg-primary/10 p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="h-5 w-5 rounded-md bg-primary/20 flex items-center justify-center"><Activity className="h-3 w-3 text-primary" /></div>
+                <span className="text-[9px] font-bold uppercase text-muted-foreground leading-tight">Activity<br/>Steps</span>
               </div>
-              <p className="text-sm font-bold text-foreground mt-auto">6,500 <span className="text-[10px] text-muted-foreground">/ 8,000</span></p>
+              <p className="text-xs font-bold text-foreground mt-auto">6,500 <span className="text-[9px] text-muted-foreground">/ 8k</span></p>
             </div>
           </div>
         </div>
 
         {/* Next Best Action (5 cols) */}
-        <div className="lg:col-span-5 rounded-[24px] border border-emerald-500/30 bg-emerald-500/5 p-6 backdrop-blur-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute right-0 bottom-0 opacity-20 pointer-events-none">
-            <Scan className="h-40 w-40 text-emerald-500 translate-x-10 translate-y-10" />
+        <div className="lg:col-span-5 rounded-[20px] border border-emerald-500/30 bg-emerald-500/10 p-5 backdrop-blur-md shadow-sm relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none">
+            <Scan className="h-32 w-32 text-emerald-500 translate-x-8 translate-y-8" />
           </div>
           
-          <div className="relative z-10 flex items-center justify-between mb-4">
+          <div className="relative z-10 flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-emerald-400" />
-              <h2 className="font-heading text-lg font-bold text-foreground">Your Next Best Action</h2>
+              <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <h2 className="font-heading text-sm font-bold text-foreground">Your Next Best Action</h2>
             </div>
-            <span className="rounded-full bg-emerald-500/20 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-500">Recommended</span>
+            <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">Recommended</span>
           </div>
 
-          <div className="relative z-10 flex gap-4 mt-2">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
-              <FileText className="h-6 w-6" />
+          <div className="relative z-10 flex gap-3 mt-1">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+              <FileText className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-heading text-lg font-bold text-foreground">Your body scan is due.</h3>
-              <p className="text-sm text-zinc-300 mt-1 max-w-[90%]">
+              <h3 className="font-heading text-base font-bold text-foreground leading-tight">Your body scan is due.</h3>
+              <p className="text-[11px] text-muted-foreground mt-1 max-w-[95%] leading-tight">
                 Your last scan was {lastScanDaysAgo} days ago. Update your measurements to get personalized recommendations.
               </p>
-              <Link href="/dashboard/scan" className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2.5 text-xs font-bold text-black transition-transform hover:scale-105">
-                Update Body Scan <ArrowRight className="h-4 w-4" />
+              <Link href="/dashboard/scan" className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-500 hover:bg-emerald-600 px-4 py-1.5 text-[10px] font-bold text-white transition-colors shadow-sm">
+                Update Body Scan <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -233,22 +237,21 @@ export default async function CustomerDashboardPage() {
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         
         {/* Body Composition (4 cols) */}
-        <div className="lg:col-span-4 rounded-[24px] border border-white/5 bg-white/5 p-6 backdrop-blur-xl dark:bg-black/40">
-          <div className="flex items-center gap-2 mb-6">
-            <Scan className="h-5 w-5 text-primary" />
-            <h2 className="font-heading text-lg font-bold text-foreground">Your Body Composition</h2>
+        <div className="lg:col-span-4 rounded-[20px] border border-border bg-card p-5 shadow-sm backdrop-blur-md">
+          <div className="flex items-center gap-2 mb-4">
+            <Scan className="h-4 w-4 text-primary" />
+            <h2 className="font-heading text-base font-bold text-foreground">Your Body Composition</h2>
           </div>
           <div className="flex gap-4">
-            <div className="flex flex-col items-center justify-between w-1/3">
-              <div className="flex-1 w-full rounded-xl bg-black/50 border border-white/5 flex items-center justify-center overflow-hidden">
-                {/* Simulated 3D Avatar space */}
-                <Image src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=200&auto=format&fit=crop" width={100} height={200} alt="Avatar" className="opacity-50 h-full object-cover" />
+            <div className="flex flex-col items-center justify-between w-[90px] shrink-0">
+              <div className="flex-1 w-full rounded-lg bg-muted/50 border border-border flex items-center justify-center overflow-hidden">
+                <Image src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=200&auto=format&fit=crop" width={90} height={160} alt="Avatar" className="opacity-50 h-full object-cover mix-blend-multiply dark:mix-blend-screen" />
               </div>
-              <Link href="/dashboard/progress" className="mt-3 flex items-center justify-center gap-1 w-full rounded-full border border-white/20 bg-white/5 py-1.5 text-[10px] font-bold text-foreground hover:bg-white/10">
-                View 3D Body <ArrowRight className="h-3 w-3" />
+              <Link href="/dashboard/progress" className="mt-2 flex items-center justify-center gap-1 w-full rounded-full border border-border bg-muted/50 py-1 text-[9px] font-bold text-foreground hover:bg-muted transition-colors">
+                View 3D Body <ArrowRight className="h-2 w-2" />
               </Link>
             </div>
-            <div className="flex-1 flex flex-col justify-between">
+            <div className="flex-1 flex flex-col justify-between gap-1">
               <CompRow label="Weight" val={metrics.weight} unit="kg" trend="↓ 1.2" color="text-emerald-500" />
               <CompRow label="BMI" val={metrics.bmi} unit="" trend="Normal" color="text-blue-500" />
               <CompRow label="Body Fat" val={metrics.bodyFat} unit="%" trend="↓ 2.3" color="text-emerald-500" />
@@ -261,56 +264,56 @@ export default async function CustomerDashboardPage() {
         </div>
 
         {/* Progress Chart (4 cols) */}
-        <div className="lg:col-span-4 rounded-[24px] border border-white/5 bg-white/5 p-6 backdrop-blur-xl dark:bg-black/40">
-          <div className="flex items-center justify-between mb-6">
+        <div className="lg:col-span-4 rounded-[20px] border border-border bg-card p-5 shadow-sm backdrop-blur-md flex flex-col">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-emerald-500" />
-              <h2 className="font-heading text-lg font-bold text-foreground">Your Progress</h2>
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+              <h2 className="font-heading text-base font-bold text-foreground">Your Progress</h2>
             </div>
             <Link href="/dashboard/progress" className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
               View Details <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          <div className="flex gap-2 mb-4">
-            <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-[10px] font-bold text-emerald-500 border border-emerald-500/20">Weight</span>
-            <span className="rounded-full bg-transparent px-3 py-1 text-[10px] font-bold text-muted-foreground border border-white/10">Body Fat</span>
-            <span className="rounded-full bg-transparent px-3 py-1 text-[10px] font-bold text-muted-foreground border border-white/10">Muscle</span>
+          <div className="flex gap-2 mb-3">
+            <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Weight</span>
+            <span className="rounded-full bg-muted/50 px-2.5 py-0.5 text-[9px] font-bold text-muted-foreground border border-border">Body Fat</span>
+            <span className="rounded-full bg-muted/50 px-2.5 py-0.5 text-[9px] font-bold text-muted-foreground border border-border">Muscle</span>
           </div>
-          <div className="flex-1 h-[140px] w-full border-b border-l border-white/10 relative">
+          <div className="flex-1 w-full border-b border-l border-border relative min-h-[100px]">
              {/* Fake line chart using SVG for exact layout match */}
-             <svg className="h-full w-full" viewBox="0 0 100 50" preserveAspectRatio="none">
+             <svg className="h-full w-full absolute inset-0" viewBox="0 0 100 50" preserveAspectRatio="none">
                <polyline points="0,20 20,25 40,30 60,32 80,35 100,38" fill="none" stroke="#10b981" strokeWidth="2" />
                <circle cx="100" cy="38" r="2" fill="#10b981" />
              </svg>
-             <div className="absolute top-1/2 right-0 -translate-y-6 bg-white/10 backdrop-blur-md px-2 py-1 rounded text-[10px] border border-white/10 text-center">
+             <div className="absolute top-1/2 right-0 -translate-y-5 bg-card/80 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] border border-border text-center shadow-sm">
                <span className="block font-bold text-foreground">61.5 kg</span>
-               <span className="block text-[8px] text-muted-foreground">{todayDate.split(',')[1]}</span>
+               <span className="block text-[7px] text-muted-foreground">{todayDateShort}</span>
              </div>
           </div>
         </div>
 
         {/* Today's Nutrition (4 cols) */}
-        <div className="lg:col-span-4 rounded-[24px] border border-white/5 bg-white/5 p-6 backdrop-blur-xl dark:bg-black/40">
+        <div className="lg:col-span-4 rounded-[20px] border border-border bg-card p-5 shadow-sm backdrop-blur-md">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Utensils className="h-5 w-5 text-emerald-500" />
-              <h2 className="font-heading text-lg font-bold text-foreground">Today's Nutrition</h2>
+              <Utensils className="h-4 w-4 text-emerald-500" />
+              <h2 className="font-heading text-base font-bold text-foreground">Today's Nutrition</h2>
             </div>
             <Link href="/dashboard/nutrition" className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
               View Log <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
           
-          <div className="flex items-center gap-4 mb-4 pb-4 border-b border-white/5">
+          <div className="flex items-center gap-4 mb-3 pb-3 border-b border-border">
             {/* Donut Chart Simulation */}
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-full border-[6px] border-white/5">
-              <div className="absolute inset-[-6px] rounded-full border-[6px] border-emerald-500" style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 50%)" }} />
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-[5px] border-muted">
+              <div className="absolute inset-[-5px] rounded-full border-[5px] border-emerald-500" style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 50%)" }} />
               <div className="flex flex-col items-center">
-                <span className="font-heading text-lg font-bold text-foreground">1,250</span>
-                <span className="text-[8px] font-medium text-muted-foreground">/ 2,000 kcal</span>
+                <span className="font-heading text-sm font-bold text-foreground leading-none">1,250</span>
+                <span className="text-[7px] font-medium text-muted-foreground">/ 2,000 kcal</span>
               </div>
             </div>
-            <div className="flex-1 flex flex-col gap-2 text-xs">
+            <div className="flex-1 flex flex-col gap-1.5 text-xs">
                <MacroRow label="Protein" val="62g" total="/ 120g" color="bg-emerald-500" />
                <MacroRow label="Carbs" val="180g" total="/ 250g" color="bg-blue-500" />
                <MacroRow label="Fats" val="42g" total="/ 70g" color="bg-orange-500" />
@@ -321,9 +324,9 @@ export default async function CustomerDashboardPage() {
             <MealMiniCard name="Breakfast" desc="Oats + Banana" cal="320" />
             <MealMiniCard name="Lunch" desc="Brown Rice + Veg" cal="450" />
             <MealMiniCard name="Snack" desc="Protein Shake" cal="180" />
-            <div className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/20 bg-white/5 py-2 cursor-pointer hover:bg-white/10 transition-colors">
-              <Plus className="h-4 w-4 text-muted-foreground" />
-              <span className="text-[8px] font-bold text-muted-foreground uppercase">Add Meal</span>
+            <div className="flex-1 flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border bg-muted/30 py-2 cursor-pointer hover:bg-muted transition-colors">
+              <Plus className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[7px] font-bold text-muted-foreground uppercase">Add Meal</span>
             </div>
           </div>
         </div>
@@ -332,52 +335,52 @@ export default async function CustomerDashboardPage() {
       {/* 5. BOTTOM ROW (Challenges, Products, Education) */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <BottomCard title="Upcoming Challenges" link="/dashboard/discover">
-          <div className="flex items-center gap-3 bg-white/5 rounded-xl p-2 border border-white/5">
-            <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center"><Activity className="h-4 w-4 text-emerald-500" /></div>
+          <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-2 border border-border">
+            <div className="h-7 w-7 rounded-md bg-emerald-500/10 flex items-center justify-center"><Activity className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /></div>
             <div>
-              <p className="text-xs font-bold text-foreground">30 Day Fitness Challenge</p>
-              <p className="text-[10px] text-muted-foreground">Day 7 of 30</p>
+              <p className="text-[11px] font-bold text-foreground leading-tight">30 Day Fitness Challenge</p>
+              <p className="text-[9px] text-muted-foreground">Day 7 of 30</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-white/5 rounded-xl p-2 border border-white/5 mt-2">
-            <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center"><Droplet className="h-4 w-4 text-blue-500" /></div>
+          <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-2 border border-border mt-2">
+            <div className="h-7 w-7 rounded-md bg-blue-500/10 flex items-center justify-center"><Droplet className="h-3 w-3 text-blue-600 dark:text-blue-400" /></div>
             <div>
-              <p className="text-xs font-bold text-foreground">Hydration Challenge</p>
-              <p className="text-[10px] text-muted-foreground">Day 12 of 30</p>
+              <p className="text-[11px] font-bold text-foreground leading-tight">Hydration Challenge</p>
+              <p className="text-[9px] text-muted-foreground">Day 12 of 30</p>
             </div>
           </div>
         </BottomCard>
 
         <BottomCard title="Recommended for You" link="/dashboard/discover">
-          <div className="flex items-center gap-3 bg-white/5 rounded-xl p-2 border border-white/5">
-            <div className="h-8 w-8 rounded-full bg-black/50 border border-white/10 flex items-center justify-center overflow-hidden"><ShoppingBag className="h-4 w-4 text-emerald-500" /></div>
+          <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-2 border border-border">
+            <div className="h-7 w-7 rounded-md bg-white border border-border flex items-center justify-center overflow-hidden"><ShoppingBag className="h-3 w-3 text-emerald-600" /></div>
             <div>
-              <p className="text-xs font-bold text-foreground">Formula 1 Shake</p>
-              <p className="text-[10px] text-orange-400">★ 4.8</p>
+              <p className="text-[11px] font-bold text-foreground leading-tight">Formula 1 Shake</p>
+              <p className="text-[9px] text-orange-500 font-bold">★ 4.8</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-white/5 rounded-xl p-2 border border-white/5 mt-2">
-            <div className="h-8 w-8 rounded-full bg-black/50 border border-white/10 flex items-center justify-center overflow-hidden"><ShoppingBag className="h-4 w-4 text-emerald-500" /></div>
+          <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-2 border border-border mt-2">
+            <div className="h-7 w-7 rounded-md bg-white border border-border flex items-center justify-center overflow-hidden"><ShoppingBag className="h-3 w-3 text-emerald-600" /></div>
             <div>
-              <p className="text-xs font-bold text-foreground">Personalized Protein</p>
-              <p className="text-[10px] text-orange-400">★ 4.6</p>
+              <p className="text-[11px] font-bold text-foreground leading-tight">Personalized Protein</p>
+              <p className="text-[9px] text-orange-500 font-bold">★ 4.6</p>
             </div>
           </div>
         </BottomCard>
 
         <BottomCard title="SVH Education" link="/dashboard/journal">
-          <div className="flex items-center gap-3 bg-white/5 rounded-xl p-2 border border-white/5">
-            <div className="h-8 w-12 rounded bg-black/50 overflow-hidden"><Image src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=100&auto=format&fit=crop" width={48} height={32} alt="article" className="h-full w-full object-cover opacity-70" /></div>
+          <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-2 border border-border">
+            <div className="h-7 w-10 rounded bg-muted overflow-hidden"><Image src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=100&auto=format&fit=crop" width={40} height={28} alt="article" className="h-full w-full object-cover" /></div>
             <div>
-              <p className="text-xs font-bold text-foreground">5 Nutrition Tips for Energy</p>
-              <p className="text-[10px] text-muted-foreground">5 min read</p>
+              <p className="text-[11px] font-bold text-foreground leading-tight">5 Nutrition Tips for Energy</p>
+              <p className="text-[9px] text-muted-foreground">5 min read</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-white/5 rounded-xl p-2 border border-white/5 mt-2">
-            <div className="h-8 w-12 rounded bg-black/50 overflow-hidden"><Image src="https://images.unsplash.com/photo-1594882645126-14020914d58d?q=80&w=100&auto=format&fit=crop" width={48} height={32} alt="article" className="h-full w-full object-cover opacity-70" /></div>
+          <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-2 border border-border mt-2">
+            <div className="h-7 w-10 rounded bg-muted overflow-hidden"><Image src="https://images.unsplash.com/photo-1594882645126-14020914d58d?q=80&w=100&auto=format&fit=crop" width={40} height={28} alt="article" className="h-full w-full object-cover" /></div>
             <div>
-              <p className="text-xs font-bold text-foreground">Understanding Body Fat</p>
-              <p className="text-[10px] text-muted-foreground">7 min read</p>
+              <p className="text-[11px] font-bold text-foreground leading-tight">Understanding Body Fat</p>
+              <p className="text-[9px] text-muted-foreground">7 min read</p>
             </div>
           </div>
         </BottomCard>
@@ -386,17 +389,17 @@ export default async function CustomerDashboardPage() {
       {/* FLOATING AI BOT */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center">
         <div className="relative group cursor-pointer flex flex-col items-center">
-          <div className="mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-bold text-white border border-white/10 whitespace-nowrap">
+          <div className="mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-foreground px-3 py-1.5 rounded-lg text-xs font-bold text-background shadow-md whitespace-nowrap">
             Talk to SVH AI Coach
           </div>
-          <div className="h-16 w-16 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600 p-[2px] shadow-[0_0_30px_rgba(16,185,129,0.5)] transition-transform hover:scale-105">
-            <div className="h-full w-full rounded-full bg-black flex items-center justify-center relative overflow-hidden">
-               <Bot className="h-8 w-8 text-emerald-400 mb-1" />
-               <div className="absolute bottom-2 h-1.5 w-6 rounded-full bg-emerald-500/50 animate-pulse" />
+          <div className="h-14 w-14 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600 p-[2px] shadow-lg transition-transform hover:scale-105">
+            <div className="h-full w-full rounded-full bg-card flex items-center justify-center relative overflow-hidden">
+               <Bot className="h-6 w-6 text-emerald-500 mb-1" />
+               <div className="absolute bottom-1.5 h-1 w-5 rounded-full bg-emerald-500/50 animate-pulse" />
             </div>
           </div>
-          <div className="absolute -bottom-2 -right-2 h-6 w-6 rounded-full bg-black border border-white/10 flex items-center justify-center">
-            <Mic className="h-3 w-3 text-emerald-500" />
+          <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-card border border-border flex items-center justify-center shadow-sm">
+            <Mic className="h-2.5 w-2.5 text-emerald-500" />
           </div>
         </div>
       </div>
@@ -408,38 +411,38 @@ export default async function CustomerDashboardPage() {
 // Helper Components
 function MetricCard({ title, value, unit, trend, subtitle, icon: Icon, chartColor, trendColor, isScore }: any) {
   return (
-    <div className="flex flex-col justify-between rounded-[20px] border border-white/5 bg-white/5 p-4 backdrop-blur-md dark:bg-black/40">
-      <div className="flex items-center gap-2 mb-2">
-        <div className={`rounded-md ${isScore ? 'bg-emerald-500/20' : 'bg-white/10'} p-1.5`}>
-          <Icon className={`h-4 w-4 ${isScore ? 'text-emerald-500' : 'text-muted-foreground'}`} />
+    <div className="flex flex-col justify-between rounded-[20px] border border-border bg-card p-4 shadow-sm backdrop-blur-md">
+      <div className="flex items-center gap-2 mb-3">
+        <div className={`rounded-md ${isScore ? 'bg-emerald-500/10' : 'bg-muted/50'} p-1.5 border border-border/50`}>
+          <Icon className={`h-3 w-3 ${isScore ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
         </div>
-        <span className="text-xs font-bold text-muted-foreground">{title}</span>
+        <span className="text-[10px] font-bold text-muted-foreground">{title}</span>
         <ChevronRight className="h-3 w-3 text-muted-foreground ml-auto" />
       </div>
       <div className="flex items-center gap-3">
         {isScore && (
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-full border-[4px] border-emerald-500/20">
-             <div className="absolute inset-[-4px] rounded-full border-[4px] border-emerald-500" style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 50%)" }} />
-             <span className="font-heading text-xl font-bold text-white">{value}</span>
+          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-[3px] border-emerald-500/20">
+             <div className="absolute inset-[-3px] rounded-full border-[3px] border-emerald-500" style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 50%)" }} />
+             <span className="font-heading text-lg font-bold text-foreground">{value}</span>
           </div>
         )}
         {!isScore && (
           <div className="flex flex-col">
-            <span className="font-heading text-2xl font-bold text-white drop-shadow-sm">{value} <span className="text-sm font-medium text-muted-foreground">{unit}</span></span>
-            <span className={`text-[10px] font-bold ${trendColor || 'text-emerald-500'} mt-1`}>{trend}</span>
+            <span className="font-heading text-xl font-bold text-foreground">{value} <span className="text-xs font-medium text-muted-foreground">{unit}</span></span>
+            <span className={`text-[9px] font-bold ${trendColor || 'text-emerald-500'} mt-0.5`}>{trend}</span>
           </div>
         )}
         {isScore && subtitle && (
-          <div className="flex flex-col ml-2">
-            <span className="text-[10px] font-bold text-emerald-500">{trend}</span>
-            <span className="text-[10px] text-muted-foreground">{subtitle}</span>
+          <div className="flex flex-col ml-1">
+            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">{trend}</span>
+            <span className="text-[9px] text-muted-foreground leading-tight mt-0.5">{subtitle}</span>
           </div>
         )}
       </div>
       {/* Fake sparkline */}
       {!isScore && (
-        <div className="mt-3 h-6 w-full">
-           <svg viewBox="0 0 100 20" className="h-full w-full opacity-70" preserveAspectRatio="none">
+        <div className="mt-3 h-5 w-full">
+           <svg viewBox="0 0 100 20" className="h-full w-full opacity-60" preserveAspectRatio="none">
              <polyline points="0,15 20,12 40,16 60,8 80,10 100,5" fill="none" stroke="currentColor" strokeWidth="2" className={chartColor} />
            </svg>
         </div>
@@ -450,11 +453,11 @@ function MetricCard({ title, value, unit, trend, subtitle, icon: Icon, chartColo
 
 function CompRow({ label, val, unit, trend, color }: any) {
   return (
-    <div className="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-0">
+    <div className="flex items-center justify-between text-[10px] py-1 border-b border-border last:border-0">
       <span className="text-muted-foreground">{label}</span>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <span className="font-bold text-foreground w-12 text-right">{val} {unit}</span>
-        <span className={`font-bold w-12 text-right ${color}`}>{trend}</span>
+        <span className={`font-bold w-10 text-right ${color}`}>{trend}</span>
       </div>
     </div>
   );
@@ -464,35 +467,35 @@ function MacroRow({ label, val, total, color }: any) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-1.5">
-        <div className={`h-2 w-2 rounded-full ${color}`} />
-        <span className="text-muted-foreground">{label}</span>
+        <div className={`h-1.5 w-1.5 rounded-full ${color}`} />
+        <span className="text-[10px] text-muted-foreground">{label}</span>
       </div>
-      <div className="font-bold text-foreground">{val} <span className="text-muted-foreground text-[10px]">{total}</span></div>
+      <div className="font-bold text-foreground text-[10px]">{val} <span className="text-muted-foreground text-[9px]">{total}</span></div>
     </div>
   );
 }
 
 function MealMiniCard({ name, desc, cal }: any) {
   return (
-    <div className="flex-1 flex flex-col rounded-xl bg-black/40 border border-white/5 p-2 relative overflow-hidden">
-      <div className="absolute -right-4 -bottom-4 h-12 w-12 rounded-full bg-emerald-500/10 blur-xl" />
-      <span className="text-[10px] font-bold text-foreground mb-1">{name}</span>
-      <span className="text-[8px] text-muted-foreground truncate">{desc}</span>
-      <span className="text-[9px] font-bold text-orange-400 mt-2">{cal} kcal</span>
+    <div className="flex-1 flex flex-col rounded-lg bg-muted/30 border border-border p-2 relative overflow-hidden">
+      <div className="absolute -right-3 -bottom-3 h-8 w-8 rounded-full bg-emerald-500/10 blur-md" />
+      <span className="text-[9px] font-bold text-foreground mb-0.5">{name}</span>
+      <span className="text-[7px] text-muted-foreground truncate">{desc}</span>
+      <span className="text-[8px] font-bold text-orange-500 mt-1.5">{cal} kcal</span>
     </div>
   );
 }
 
 function BottomCard({ title, link, children }: any) {
   return (
-    <div className="rounded-[24px] border border-white/5 bg-white/5 p-5 backdrop-blur-xl dark:bg-black/40">
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-[20px] border border-border bg-card p-4 shadow-sm backdrop-blur-md">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-emerald-500" />
-          <h3 className="font-heading text-sm font-bold text-foreground">{title}</h3>
+          <Activity className="h-3 w-3 text-emerald-500" />
+          <h3 className="font-heading text-xs font-bold text-foreground">{title}</h3>
         </div>
-        <Link href={link} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
-          View All <ArrowRight className="h-3 w-3" />
+        <Link href={link} className="text-[9px] font-bold text-primary hover:underline flex items-center gap-1">
+          View All <ArrowRight className="h-2 w-2" />
         </Link>
       </div>
       <div>{children}</div>
